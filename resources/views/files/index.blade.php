@@ -345,12 +345,12 @@
                                             </a>
                                         @endif
 
-                                        @if ($filePermission === 'edit' || $isOwner)
+                                        {{-- @if ($filePermission === 'edit' || $isOwner)
                                             <a href="{{ route('files.edit', $file) }}" class="btn btn-outline-info"
                                                 title="Edit" data-bs-toggle="tooltip">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                        @endif
+                                        @endif --}}
 
                                         @if ($isOwner)
                                             @if ($file->status === 'active')
@@ -365,10 +365,10 @@
                                                 </button>
                                             @endif
 
-                                            <button type="button" class="btn btn-outline-danger" title="Delete"
+                                            {{-- <button type="button" class="btn btn-outline-danger" title="Delete"
                                                 data-bs-toggle="tooltip" onclick="deleteFile({{ $file->id }})">
                                                 <i class="bi bi-trash"></i>
-                                            </button>
+                                            </button> --}}
                                         @endif
                                     </div>
                                 </td>

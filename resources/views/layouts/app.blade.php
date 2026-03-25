@@ -20,9 +20,9 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    
-<!-- Font Awesome as fallback -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Font Awesome as fallback -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Core CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -36,235 +36,220 @@
 <body>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-    <!-- Logo Area -->
-    <div class="sidebar-header">
-        <a href="{{ route('dashboard') }}" class="logo-container">
-            <div class="logo-wrapper">
+        <!-- Logo Area -->
+        <div class="sidebar-header">
+            <a href="{{ route('dashboard') }}" class="logo-container">
+                <div class="logo-wrapper">
+                    @php
+                        $logoPath = public_path('/assets/images/Sona-star-logo.png');
+                        $logoExists = file_exists($logoPath);
+                    @endphp
+
+                    @if ($logoExists)
+                        <img src="{{ asset('assets/images/Sona-star-logo.png') }}" alt="{{ config('app.name') }}"
+                            class="logo-img" loading="lazy">
+                    @else
+                        <div class="logo-placeholder">
+                            <span class="logo-text">{{ substr(config('app.name'), 0, 2) }}</span>
+                        </div>
+                    @endif
+                </div>
+                <div class="app-name-wrapper">
+                    <h3 class="app-name">{{ config('app.name') }}</h3>
+                </div>
+            </a>
+        </div>
+
+        <nav class="sidebar-menu">
+            @auth
                 @php
-                    $logoPath = public_path('/assets/images/Sona-star-logo.png');
-                    $logoExists = file_exists($logoPath);
+                    $user = Auth::user();
+                    $isSuperAdmin = $user->isSuperAdmin();
+
+                    // Define permissions for each module
+                    $permissions = [
+                        'dashboard' => true, // Dashboard is always visible
+                        'files' => $user->hasPermission('view-files') || $isSuperAdmin,
+                        'transfers' => $user->hasPermission('view-transfers') || $isSuperAdmin,
+                        'departments' => $user->hasPermission('view-departments') || $isSuperAdmin,
+                        'users' => $user->hasPermission('view-users') || $isSuperAdmin,
+                        'roles' => $user->hasPermission('view-roles') || $isSuperAdmin,
+                        'logs' => $user->hasPermission('view-logs') || $isSuperAdmin,
+                        'reports_files' => $user->hasPermission('view-file-reports') || $isSuperAdmin,
+                        'reports_transfers' => $user->hasPermission('view-transfer-reports') || $isSuperAdmin,
+                        'reports_users' => $user->hasPermission('view-user-reports') || $isSuperAdmin,
+                        'profile' => true, // Profile is always visible
+                        'settings' => $user->hasPermission('view-settings') || $isSuperAdmin,
+                    ];
+
+                    // Check if any report permission exists
+                    $hasAnyReportPermission =
+                        $permissions['reports_files'] ||
+                        $permissions['reports_transfers'] ||
+                        $permissions['reports_users'];
                 @endphp
 
-                @if ($logoExists)
-                    <img src="{{ asset('assets/images/Sona-star-logo.png') }}" alt="{{ config('app.name') }}"
-                        class="logo-img" loading="lazy">
-                @else
-                    <div class="logo-placeholder">
-                        <span class="logo-text">{{ substr(config('app.name'), 0, 2) }}</span>
-                    </div>
-                @endif
-            </div>
-            <div class="app-name-wrapper">
-                <h3 class="app-name">{{ config('app.name') }}</h3>
-            </div>
-        </a>
-    </div>
-
-    <nav class="sidebar-menu">
-        @auth
-            @php
-                $user = Auth::user();
-                $isSuperAdmin = $user->isSuperAdmin();
-                
-                // Define permissions for each module
-                $permissions = [
-                    'dashboard' => true, // Dashboard is always visible
-                    'files' => $user->hasPermission('view-files') || $isSuperAdmin,
-                    'transfers' => $user->hasPermission('view-transfers') || $isSuperAdmin,
-                    'departments' => $user->hasPermission('view-departments') || $isSuperAdmin,
-                    'users' => $user->hasPermission('view-users') || $isSuperAdmin,
-                    'roles' => $user->hasPermission('view-roles') || $isSuperAdmin,
-                    'logs' => $user->hasPermission('view-logs') || $isSuperAdmin,
-                    'reports_files' => $user->hasPermission('view-file-reports') || $isSuperAdmin,
-                    'reports_transfers' => $user->hasPermission('view-transfer-reports') || $isSuperAdmin,
-                    'reports_users' => $user->hasPermission('view-user-reports') || $isSuperAdmin,
-                    'profile' => true, // Profile is always visible
-                    'settings' => $user->hasPermission('view-settings') || $isSuperAdmin,
-                ];
-                
-                // Check if any report permission exists
-                $hasAnyReportPermission = $permissions['reports_files'] || 
-                                         $permissions['reports_transfers'] || 
-                                         $permissions['reports_users'];
-            @endphp
-            
-            <!-- Main Section -->
-            <div class="menu-section">
-                @if($permissions['dashboard'])
-                    <div class="menu-item">
-                        <a href="{{ route('dashboard') }}"
-                            class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                            <i class="bi bi-grid-1x2-fill"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </div>
-                @endif
-
-                @if($permissions['files'])
-                    <div class="menu-item">
-                        <a href="{{ route('files.index') }}"
-                            class="menu-link {{ request()->routeIs('files.*') ? 'active' : '' }}">
-                            <i class="bi bi-folder-fill"></i>
-                            <span>Files</span>
-                            @php
-                                $fileCount = Cache::remember('user_files_count_' . Auth::id(), 300, function () {
-                                    return Auth::user()->files()->count();
-                                });
-                            @endphp
-                            @if ($fileCount > 0)
-                                <span class="menu-badge">{{ $fileCount }}</span>
-                            @endif
-                        </a>
-                    </div>
-                @endif
-
-                @if($permissions['transfers'])
-                    <div class="menu-item">
-                        <a href="{{ route('transfers.index') }}"
-                            class="menu-link {{ request()->routeIs('transfers.*') ? 'active' : '' }}">
-                            <i class="bi bi-arrow-left-right"></i>
-                            <span>Transfers</span>
-                        </a>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Management Section -->
-            @if($permissions['departments'] || $permissions['users'])
+                <!-- Main Section -->
                 <div class="menu-section">
-                    @if($permissions['departments'])
+                    @if ($permissions['dashboard'])
                         <div class="menu-item">
-                            <a href="{{ route('departments.index') }}"
-                                class="menu-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                                <i class="bi bi-building"></i>
-                                <span>Departments</span>
+                            <a href="{{ route('dashboard') }}"
+                                class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                                <i class="bi bi-grid-1x2-fill"></i>
+                                <span>Dashboard</span>
                             </a>
                         </div>
                     @endif
 
-                    @if($permissions['users'])
+                    @if ($permissions['files'])
                         <div class="menu-item">
-                            <a href="{{ route('users.index') }}"
-                                class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                                <i class="bi bi-people-fill"></i>
-                                <span>Users</span>
-                                @if($isSuperAdmin)
-                                    @php
-                                        $userCount = Cache::remember('total_users_count', 300, function () {
-                                            return App\Models\User::count();
-                                        });
-                                    @endphp
-                                    @if ($userCount > 0)
-                                        <span class="menu-badge">{{ $userCount }}</span>
+                            <a href="{{ route('files.index') }}"
+                                class="menu-link {{ request()->routeIs('files.*') ? 'active' : '' }}">
+                                <i class="bi bi-folder-fill"></i>
+                                <span>Files</span>
+
+                            </a>
+                        </div>
+                    @endif
+
+                    @if ($permissions['transfers'])
+                        <div class="menu-item">
+                            <a href="{{ route('transfers.index') }}"
+                                class="menu-link {{ request()->routeIs('transfers.*') ? 'active' : '' }}">
+                                <i class="bi bi-arrow-left-right"></i>
+                                <span>Transfers</span>
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Management Section -->
+                @if ($permissions['departments'] || $permissions['users'])
+                    <div class="menu-section">
+                        @if ($permissions['departments'])
+                            <div class="menu-item">
+                                <a href="{{ route('departments.index') }}"
+                                    class="menu-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
+                                    <i class="bi bi-building"></i>
+                                    <span>Departments</span>
+                                </a>
+                            </div>
+                        @endif
+
+                        @if ($permissions['users'])
+                            <div class="menu-item">
+                                <a href="{{ route('users.index') }}"
+                                    class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                                    <i class="bi bi-people-fill"></i>
+                                    <span>Users</span>
+
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Roles & Permissions -->
+                @if ($permissions['roles'])
+                    <div class="menu-section">
+                        <div class="menu-item">
+                            <a href="{{ route('roles.index') }}"
+                                class="menu-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                                <i class="bi bi-shield"></i>
+                                <span>Roles & Permissions</span>
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Analytics & Reports Section -->
+                <div class="menu-section">
+                    @if ($permissions['logs'])
+                        <div class="menu-item">
+                            <a href="{{ route('logs.index') }}"
+                                class="menu-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Activity Logs</span>
+                            </a>
+                        </div>
+                    @endif
+
+                    @if ($hasAnyReportPermission)
+                        <div class="menu-item">
+                            <a href="#reportsMenu" class="menu-link" data-bs-toggle="collapse" role="button"
+                                aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
+                                <i class="bi bi-graph-up"></i>
+                                <span>Reports</span>
+                                <i class="bi bi-chevron-down ms-auto"></i>
+                            </a>
+                            <div class="collapse {{ request()->routeIs('reports.*') ? 'show' : '' }}" id="reportsMenu">
+                                <div class="submenu">
+                                    @if ($permissions['reports_files'])
+                                        <a href="{{ route('reports.files') }}"
+                                            class="submenu-link {{ request()->routeIs('reports.files') ? 'active' : '' }}">
+                                            <i class="bi bi-file-text"></i>
+                                            <span>File Reports</span>
+                                        </a>
                                     @endif
-                                @endif
-                            </a>
-                        </div>
-                    @endif
-                </div>
-            @endif
 
-            <!-- Roles & Permissions -->
-            @if($permissions['roles'])
-                <div class="menu-section">
-                    <div class="menu-item">
-                        <a href="{{ route('roles.index') }}"
-                            class="menu-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-                            <i class="bi bi-shield"></i>
-                            <span>Roles & Permissions</span>
-                        </a>
-                    </div>
-                </div>
-            @endif
+                                    @if ($permissions['reports_transfers'])
+                                        <a href="{{ route('reports.transfers') }}"
+                                            class="submenu-link {{ request()->routeIs('reports.transfers') ? 'active' : '' }}">
+                                            <i class="bi bi-truck"></i>
+                                            <span>Transfer Reports</span>
+                                        </a>
+                                    @endif
 
-            <!-- Analytics & Reports Section -->
-            <div class="menu-section">
-                @if($permissions['logs'])
-                    <div class="menu-item">
-                        <a href="{{ route('logs.index') }}"
-                            class="menu-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
-                            <i class="bi bi-clock-history"></i>
-                            <span>Activity Logs</span>
-                        </a>
-                    </div>
-                @endif
-
-                @if($hasAnyReportPermission)
-                    <div class="menu-item">
-                        <a href="#reportsMenu" class="menu-link" data-bs-toggle="collapse" role="button"
-                            aria-expanded="{{ request()->routeIs('reports.*') ? 'true' : 'false' }}">
-                            <i class="bi bi-graph-up"></i>
-                            <span>Reports</span>
-                            <i class="bi bi-chevron-down ms-auto"></i>
-                        </a>
-                        <div class="collapse {{ request()->routeIs('reports.*') ? 'show' : '' }}" id="reportsMenu">
-                            <div class="submenu">
-                                @if($permissions['reports_files'])
-                                    <a href="{{ route('reports.files') }}"
-                                        class="submenu-link {{ request()->routeIs('reports.files') ? 'active' : '' }}">
-                                        <i class="bi bi-file-text"></i>
-                                        <span>File Reports</span>
-                                    </a>
-                                @endif
-                                
-                                @if($permissions['reports_transfers'])
-                                    <a href="{{ route('reports.transfers') }}"
-                                        class="submenu-link {{ request()->routeIs('reports.transfers') ? 'active' : '' }}">
-                                        <i class="bi bi-truck"></i>
-                                        <span>Transfer Reports</span>
-                                    </a>
-                                @endif
-                                
-                                @if($permissions['reports_users'])
-                                    <a href="{{ route('reports.users') }}"
-                                        class="submenu-link {{ request()->routeIs('reports.users') ? 'active' : '' }}">
-                                        <i class="bi bi-people"></i>
-                                        <span>User Reports</span>
-                                    </a>
-                                @endif
+                                    @if ($permissions['reports_users'])
+                                        <a href="{{ route('reports.users') }}"
+                                            class="submenu-link {{ request()->routeIs('reports.users') ? 'active' : '' }}">
+                                            <i class="bi bi-people"></i>
+                                            <span>User Reports</span>
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Settings Section -->
-            <div class="menu-section">
-                <div class="menu-item">
-                    <a href="{{ route('profile.show') }}"
-                        class="menu-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-                        <i class="bi bi-person-circle"></i>
-                        <span>Profile</span>
-                    </a>
+                    @endif
                 </div>
 
-                @if($permissions['settings'])
+                <!-- Settings Section -->
+                <div class="menu-section">
                     <div class="menu-item">
-                        <a href="{{ route('settings.security') }}"
-                            class="menu-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                            <i class="bi bi-gear-fill"></i>
-                            <span>Settings</span>
+                        <a href="{{ route('profile.show') }}"
+                            class="menu-link {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                            <i class="bi bi-person-circle"></i>
+                            <span>Profile</span>
                         </a>
                     </div>
-                @endif
-            </div>
 
-            <div class="menu-divider"></div>
+                    @if ($permissions['settings'])
+                        <div class="menu-item">
+                            <a href="{{ route('settings.security') }}"
+                                class="menu-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                                <i class="bi bi-gear-fill"></i>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                    @endif
+                </div>
 
-            <!-- Logout -->
-            <div class="menu-item logout-item">
-                <form method="POST" action="{{ route('logout') }}" id="logout-form">
-                    @csrf
-                    <a href="#" class="menu-link"
-                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span>Logout</span>
-                    </a>
-                </form>
-            </div>
-        @endauth
-    </nav>
-</aside>
+                <div class="menu-divider"></div>
+
+                <!-- Logout -->
+                <div class="menu-item logout-item">
+                    <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                        @csrf
+                        <a href="#" class="menu-link"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Logout</span>
+                        </a>
+                    </form>
+                </div>
+            @endauth
+        </nav>
+    </aside>
 
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
@@ -301,8 +286,8 @@
                                     <i class="bi bi-person me-2"></i> Profile
                                 </a>
                             </li>
-                            
-                            @if(Auth::user()->hasPermission('view-settings') || Auth::user()->isSuperAdmin())
+
+                            @if (Auth::user()->hasPermission('view-settings') || Auth::user()->isSuperAdmin())
                                 <li>
                                     <a class="dropdown-item py-2" href="{{ route('settings.security') }}">
                                         <i class="bi bi-shield-lock me-2"></i> Security
@@ -353,31 +338,32 @@
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
     <!-- SESSION TOAST ALERT (TOP RIGHT) -->
-    @if(session('success'))
-    <script>
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: "{{ session('success') }}",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    </script>
+    @if (session('success'))
+        <script>
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        </script>
     @endif
 
-    @if(session('error'))
-    <script>
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: "{{ session('error') }}",
-            showConfirmButton: false,
-            timer: 3000
-        });
-    </script>
+    @if (session('error'))
+        <script>
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: "{{ session('error') }}",
+                showConfirmButton: false,
+                timer: 3000
+            });
+        </script>
     @endif
 </body>
+
 </html>

@@ -19,8 +19,10 @@
         </a>
     </div>
 
-    <!-- Stats Cards -->
+    {{-- ================= STATS CARDS ================= --}}
     <div class="row g-4 mb-4">
+
+        {{-- Total Files --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card primary">
                 <div class="stat-info">
@@ -33,19 +35,22 @@
             </div>
         </div>
 
+        {{-- Shared With Me --}}
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card success">
-                <div class="stat-info">
-                    <h3>{{ number_format($stats['shared_with_me'] ?? 0) }}</h3>
-                    <p>Shared With Me</p>
+            <a href="{{ route('files.shared-with-me') }}" class="text-decoration-none">
+                <div class="stat-card success">
+                    <div class="stat-info">
+                        <h3>{{ number_format($stats['shared_with_me'] ?? 0) }}</h3>
+                        <p>Shared With Me</p>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="bi bi-share"></i>
+                    </div>
                 </div>
-                <div class="stat-icon">
-                    <i class="bi bi-share"></i>
-                </div>
-                <a href="{{ route('files.shared-with-me') }}" class="stretched-link"></a>
-            </div>
+            </a>
         </div>
 
+        {{-- Downloads --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card info">
                 <div class="stat-info">
@@ -58,6 +63,7 @@
             </div>
         </div>
 
+        {{-- Views --}}
         <div class="col-xl-3 col-md-6">
             <div class="stat-card warning">
                 <div class="stat-info">
@@ -69,40 +75,41 @@
                 </div>
             </div>
         </div>
+
     </div>
 
-    <!-- Filter Tabs -->
+    {{-- ================= FILTER TABS ================= --}}
+    @php
+        $route = Route::currentRouteName();
+    @endphp
+
     <div class="card mb-4">
-        <div class="card-body">
-            <ul class="nav nav-tabs" role="tablist">
+        <div class="card-body pb-0">
+            <ul class="nav nav-tabs">
+
                 <li class="nav-item">
-                    @php
-                        $allFilesParams = request()->except(['filter', 'page']);
-                    @endphp
-                    <a class="nav-link {{ Route::currentRouteName() === 'files.index' && !request()->has('filter') ? 'active' : '' }}"
-                        href="{{ route('files.index', $allFilesParams) }}">
-                        <i class="bi bi-files me-1"></i> All Files
+                    <a class="nav-link {{ $route == 'files.index' ? 'active' : '' }}" href="{{ route('files.index') }}">
+                        All Files
                     </a>
                 </li>
+
                 <li class="nav-item">
-                    <a class="nav-link {{ Route::currentRouteName() === 'files.my-files' ? 'active' : '' }}"
-                        href="{{ route('files.my-files', request()->except(['filter', 'page'])) }}">
-                        <i class="bi bi-person me-1"></i> My Files
+                    <a class="nav-link {{ $route == 'files.my-files' ? 'active' : '' }}"
+                        href="{{ route('files.my-files') }}">
+                        My Files
                     </a>
                 </li>
+
                 <li class="nav-item">
-                    <a class="nav-link {{ Route::currentRouteName() === 'files.shared-with-me' ? 'active' : '' }}"
-                        href="{{ route('files.shared-with-me', request()->except(['filter', 'page'])) }}">
-                        <i class="bi bi-share me-1"></i> Shared With Me
-                        @if (($stats['shared_with_me'] ?? 0) > 0)
-                            <span class="badge bg-primary ms-1">{{ $stats['shared_with_me'] }}</span>
-                        @endif
+                    <a class="nav-link {{ $route == 'files.shared-with-me' ? 'active' : '' }}"
+                        href="{{ route('files.shared-with-me') }}">
+                        Shared With Me
                     </a>
                 </li>
+
             </ul>
         </div>
     </div>
-
     <!-- Files Table Card -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">

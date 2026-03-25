@@ -13,7 +13,6 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ImportExportController;
@@ -34,16 +33,7 @@ Route::middleware('guest')->group(function () {
     // Login
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-    
-    // Registration
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
-    
-    // Password Reset
-    // Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-    // Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
-    // Route::get('/password/reset/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
-    // Route::post('/password/reset', [ForgotPasswordController::class, 'reset'])->name('password.update');
+
 
      Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
     Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
@@ -55,10 +45,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/otp-verify', [LoginController::class, 'verifyOtp'])->name('otp.verify');
     Route::post('/otp-resend', [LoginController::class, 'resendOtp'])->name('otp.resend');
     
-    // Email Verification (after registration)
-    Route::get('/email/verify', [RegisterController::class, 'showVerificationForm'])->name('verification.notice');
-    Route::post('/email/verify', [RegisterController::class, 'verifyEmail'])->name('verification.verify');
-    Route::post('/email/resend', [RegisterController::class, 'resendVerification'])->name('verification.resend');
 });
 
 // Routes for authenticated users
@@ -78,33 +64,65 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
 Route::prefix('files')->name('files.')->group(function () {
-    // STATIC ROUTES FIRST - these must come BEFORE any {file} routes
+
+    // ================= STATIC ROUTES =================
     Route::get('/create', [FileController::class, 'create'])->name('create');
     Route::get('/shared-with-me', [FileController::class, 'sharedWithMe'])->name('shared-with-me');
     Route::get('/my-files', [FileController::class, 'myFiles'])->name('my-files');
+
     Route::get('/by-permission/{permission}', [FileController::class, 'byPermission'])->name('by-permission');
     Route::get('/view-only', [FileController::class, 'viewOnlyFiles'])->name('view-only');
     Route::get('/downloadable', [FileController::class, 'downloadableFiles'])->name('downloadable');
     Route::get('/editable', [FileController::class, 'editableFiles'])->name('editable');
     Route::get('/printable', [FileController::class, 'printableFiles'])->name('printable');
-    
-    // INDEX ROUTE
+
+    // ================= INDEX =================
     Route::get('/', [FileController::class, 'index'])->name('index');
-    
-    // POST ROUTE
+
+    // ================= STORE =================
     Route::post('/', [FileController::class, 'store'])->name('store');
-    
-    // ROUTES WITH PARAMETERS - these come after all static routes
-    Route::get('/{file}', [FileController::class, 'show'])->name('show');
-    Route::get('/{file}/edit', [FileController::class, 'edit'])->name('edit');
-    Route::put('/{file}', [FileController::class, 'update'])->name('update');
-    Route::delete('/{file}', [FileController::class, 'destroy'])->name('destroy');
-    Route::get('/{file}/download', [FileController::class, 'download'])->name('download');
-    Route::post('/{file}/share', [FileController::class, 'share'])->name('share');
-    Route::post('/{file}/archive', [FileController::class, 'archive'])->name('archive');
-    Route::post('/{file}/restore', [FileController::class, 'restore'])->name('restore');
-    Route::get('/{file}/preview', [FileController::class, 'preview'])->name('preview');
+
+    // ================= PARAMETER ROUTES (FIXED 🔥) =================
+
+    Route::get('/{file}', [FileController::class, 'show'])
+        ->whereNumber('file')
+        ->name('show');
+
+    Route::get('/{file}/edit', [FileController::class, 'edit'])
+        ->whereNumber('file')
+        ->name('edit');
+
+    Route::put('/{file}', [FileController::class, 'update'])
+        ->whereNumber('file')
+        ->name('update');
+
+    Route::delete('/{file}', [FileController::class, 'destroy'])
+        ->whereNumber('file')
+        ->name('destroy');
+
+    Route::get('/{file}/download', [FileController::class, 'download'])
+        ->whereNumber('file')
+        ->name('download');
+
+    Route::post('/{file}/share', [FileController::class, 'share'])
+        ->whereNumber('file')
+        ->name('share');
+
+    Route::post('/{file}/archive', [FileController::class, 'archive'])
+        ->whereNumber('file')
+        ->name('archive');
+
+    Route::post('/{file}/restore', [FileController::class, 'restore'])
+        ->whereNumber('file')
+        ->name('restore');
+
+    Route::get('/{file}/preview', [FileController::class, 'preview'])
+        ->whereNumber('file')
+        ->name('preview');
+
+    // ================= OTHER =================
     Route::delete('/shares/{share}', [FileController::class, 'revokeAccess'])->name('shares.revoke');
+
     Route::get('/{uuid}/verify', [FileController::class, 'verifyAccess'])->name('access.verify');
     Route::post('/{uuid}/verify', [FileController::class, 'confirmAccess'])->name('access.confirm');
 });

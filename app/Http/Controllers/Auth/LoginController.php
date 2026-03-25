@@ -35,18 +35,12 @@ class LoginController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        
-
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors([
-                'email' => 'The provided credentials do not match our records.',
-            ]);
+            return back()->with('error', 'The provided credentials do not match our records.');
         }
 
         if ($user->status !== 'active') {
-            return back()->withErrors([
-                'email' => 'Your account is not active. Please contact administrator.',
-            ]);
+            return back()->with('error', 'Your account is not active. Please contact administrator.');
         }
 
         // Store user id in session for OTP verification
@@ -55,13 +49,13 @@ class LoginController extends Controller
         // Generate and send OTP
         $this->generateAndSendOtp($user, $request);
 
-        return redirect()->route('otp.verify.form');
+        return redirect()->route('otp.verify.form')->with('success', 'OTP sent successfully to your email!');
     }
 
     public function showOtpForm()
     {
         if (!session('otp_user_id')) {
-            return redirect()->route('login');
+            return redirect()->route('login')->with('error', 'Session expired. Please login again.');
         }
 
         return view('auth.otp-verify');
@@ -75,7 +69,7 @@ class LoginController extends Controller
 
         $userId = session('otp_user_id');
         if (!$userId) {
-            return redirect()->route('login');
+            return redirect()->route('login')->with('error', 'Session expired. Please login again.');
         }
 
         $otpLog = OtpLog::where('user_id', $userId)
@@ -86,18 +80,19 @@ class LoginController extends Controller
             ->first();
 
         if (!$otpLog) {
-            return back()->withErrors(['otp' => 'No valid OTP found. Please request a new one.']);
+            return back()->with('error', 'No valid OTP found. Please request a new one.');
         }
 
         if ($otpLog->attempts >= 3) {
             $otpLog->update(['status' => 'expired']);
-            return back()->withErrors(['otp' => 'Maximum attempts exceeded. Please request a new OTP.']);
+            return back()->with('error', 'Maximum attempts exceeded. Please request a new OTP.');
         }
 
         $otpLog->increment('attempts');
 
         if ($otpLog->otp_code !== $request->otp) {
-            return back()->withErrors(['otp' => 'Invalid OTP code.']);
+            $remaining = 3 - $otpLog->attempts;
+            return back()->with('error', "Invalid OTP code. {$remaining} attempts remaining.");
         }
 
         $otpLog->update([
@@ -117,14 +112,14 @@ class LoginController extends Controller
 
         session()->forget('otp_user_id');
 
-        return redirect()->intended('dashboard');
+        return redirect()->intended('dashboard')->with('success', 'Welcome back, ' . $user->name . '!');
     }
 
     public function resendOtp(Request $request)
     {
         $userId = session('otp_user_id');
         if (!$userId) {
-            return redirect()->route('login');
+            return redirect()->route('login')->with('error', 'Session expired. Please login again.');
         }
 
         $user = User::find($userId);
@@ -153,7 +148,7 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect('/login')->with('success', 'You have been logged out successfully.');
     }
 
     private function generateAndSendOtp($user, $request)

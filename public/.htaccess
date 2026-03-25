@@ -1,5 +1,4 @@
 <IfModule mod_rewrite.c>
-<<<<<<< HEAD
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
@@ -20,11 +19,3 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-=======
-RewriteEngine On
-
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [L]
-</IfModule>
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f

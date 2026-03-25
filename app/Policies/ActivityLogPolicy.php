@@ -43,4 +43,6 @@ class ActivityLogPolicy
     {
         return $user->isSuperAdmin() || $user->isDepartmentAdmin();
     }
+
+
 }

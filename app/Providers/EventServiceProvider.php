@@ -1,8 +1,5 @@
 <?php
-<<<<<<< HEAD
 // app/Providers/EventServiceProvider.php
-=======
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
 
 namespace App\Providers;
 
@@ -29,11 +26,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-<<<<<<< HEAD
         parent::boot();
-=======
-        //
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     }
 
     /**
@@ -43,8 +36,4 @@ class EventServiceProvider extends ServiceProvider
     {
         return false;
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f

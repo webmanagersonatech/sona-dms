@@ -7,11 +7,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ActivityLogController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
     public function index(Request $request)
     {
         $this->authorize('viewAny', ActivityLog::class);
@@ -56,7 +59,7 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->latest()->paginate(50);
+        $logs = $query->latest()->paginate(10);
 
         // Get unique actions and modules for filters
         $actions = ActivityLog::distinct('action')->pluck('action');
@@ -87,15 +90,13 @@ class ActivityLogController extends Controller
     {
         $this->authorize('export', ActivityLog::class);
 
-        $format = $request->get('format', 'excel');
+        $format = $request->get('format', 'csv');
         
         $query = $this->buildExportQuery($request);
         $logs = $query->get();
 
-        if ($format === 'excel') {
-            return $this->exportExcel($logs);
-        } elseif ($format === 'pdf') {
-            return $this->exportPdf($logs);
+        if ($format === 'csv') {
+            return $this->exportCsv($logs);
         }
 
         return back()->withErrors(['format' => 'Invalid export format.']);
@@ -134,56 +135,59 @@ class ActivityLogController extends Controller
         return $query->latest();
     }
 
-    private function exportExcel($logs)
+    /**
+     * Export logs as CSV (no external package needed)
+     */
+    private function exportCsv($logs)
     {
-        return Excel::download(new class($logs) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-            private $logs;
+        $fileName = 'activity-logs-' . date('Y-m-d-His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+        
+        $callback = function() use ($logs) {
+            $file = fopen('php://output', 'w');
             
-            public function __construct($logs) 
-            { 
-                $this->logs = $logs; 
+            // Add UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Add headers
+            fputcsv($file, [
+                'Date/Time',
+                'User',
+                'Action',
+                'Module',
+                'Description',
+                'IP Address',
+                'Device',
+                'Browser',
+                'Location'
+            ]);
+            
+            // Add data rows
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->created_at ? $log->created_at->format('Y-m-d H:i:s') : 'N/A',
+                    $log->user ? $log->user->name : 'System',
+                    ucfirst(str_replace('_', ' ', $log->action ?? 'N/A')),
+                    ucfirst($log->module ?? 'N/A'),
+                    $log->description ?? 'N/A',
+                    $log->ip_address ?? 'N/A',
+                    $log->device_type ?? 'N/A',
+                    $log->browser ?? 'N/A',
+                    $log->location ?? 'N/A'
+                ]);
             }
             
-            public function headings(): array
-            {
-                return [
-                    'Date/Time',
-                    'User',
-                    'Action',
-                    'Module',
-                    'Description',
-                    'IP Address',
-                    'Device',
-                    'Browser',
-                    'Location'
-                ];
-            }
-            
-            public function array(): array 
-            {
-                $data = [];
-                foreach ($this->logs as $log) {
-                    $data[] = [
-                        $log->created_at->format('Y-m-d H:i:s'),
-                        $log->user->name ?? 'System',
-                        ucfirst(str_replace('_', ' ', $log->action)),
-                        ucfirst($log->module),
-                        $log->description,
-                        $log->ip_address ?? 'N/A',
-                        $log->device_type ?? 'N/A',
-                        $log->browser ?? 'N/A',
-                        $log->location ?? 'N/A'
-                    ];
-                }
-                return $data;
-            }
-        }, 'activity-logs.xlsx');
-    }
-
-    private function exportPdf($logs)
-    {
-        $pdf = Pdf::loadView('logs.export-pdf', compact('logs'));
-        return $pdf->download('activity-logs.pdf');
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
 
     public function stats()

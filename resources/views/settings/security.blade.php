@@ -11,7 +11,7 @@
                     <h5 class="card-title mb-0">Security Settings</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('settings.security') }}">
+                    <form method="POST" action="{{ route('settings.security.update') }}">
                         @csrf
                         @method('PUT')
 
@@ -20,7 +20,7 @@
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="two_factor_enabled"
                                     name="two_factor_enabled" value="1"
-                                    {{ $user->settings['two_factor_enabled'] ?? false ? 'checked' : '' }}>
+                                    {{ isset($settings['two_factor_enabled']) && $settings['two_factor_enabled'] ? 'checked' : '' }}>
                                 <label class="form-check-label" for="two_factor_enabled">
                                     Enable Two-Factor Authentication
                                 </label>
@@ -36,23 +36,29 @@
                                 <div class="col-md-6">
                                     <select class="form-select" name="session_timeout">
                                         <option value="15"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 15 ? 'selected' : '' }}>15
-                                            minutes</option>
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 15 ? 'selected' : '' }}>
+                                            15 minutes
+                                        </option>
                                         <option value="30"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 30 ? 'selected' : '' }}>30
-                                            minutes</option>
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 30 ? 'selected' : '' }}>
+                                            30 minutes
+                                        </option>
                                         <option value="60"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 60 ? 'selected' : '' }}>1 hour
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 60 ? 'selected' : '' }}>
+                                            1 hour
                                         </option>
                                         <option value="120"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 120 ? 'selected' : '' }}>2
-                                            hours</option>
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 120 ? 'selected' : '' }}>
+                                            2 hours
+                                        </option>
                                         <option value="240"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 240 ? 'selected' : '' }}>4
-                                            hours</option>
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 240 ? 'selected' : '' }}>
+                                            4 hours
+                                        </option>
                                         <option value="480"
-                                            {{ ($user->settings['session_timeout'] ?? 30) == 480 ? 'selected' : '' }}>8
-                                            hours</option>
+                                            {{ (isset($settings['session_timeout']) ? $settings['session_timeout'] : 30) == 480 ? 'selected' : '' }}>
+                                            8 hours
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -65,14 +71,14 @@
                             <h6 class="fw-bold">Login Notifications</h6>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="email_on_login" name="email_on_login"
-                                    value="1" {{ $user->settings['email_on_login'] ?? true ? 'checked' : '' }}>
+                                    value="1" {{ (isset($settings['email_on_login']) ? $settings['email_on_login'] : true) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="email_on_login">
                                     Send email notification on new login
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="email_on_device" name="email_on_device"
-                                    value="1" {{ $user->settings['email_on_device'] ?? true ? 'checked' : '' }}>
+                                    value="1" {{ (isset($settings['email_on_device']) ? $settings['email_on_device'] : true) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="email_on_device">
                                     Send alert when logging in from new device
                                 </label>
@@ -84,7 +90,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="require_otp_download"
                                     name="require_otp_download" value="1"
-                                    {{ $user->settings['require_otp_download'] ?? true ? 'checked' : '' }}>
+                                    {{ (isset($settings['require_otp_download']) ? $settings['require_otp_download'] : true) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="require_otp_download">
                                     Require OTP approval for file downloads
                                 </label>
@@ -92,7 +98,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="notify_file_access"
                                     name="notify_file_access" value="1"
-                                    {{ $user->settings['notify_file_access'] ?? true ? 'checked' : '' }}>
+                                    {{ (isset($settings['notify_file_access']) ? $settings['notify_file_access'] : true) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="notify_file_access">
                                     Notify me when my files are accessed
                                 </label>
@@ -106,80 +112,110 @@
                 </div>
             </div>
 
+            <!-- Rest of your view remains the same... -->
             <div class="card mt-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Active Sessions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Device</th>
-                                    <th>IP Address</th>
-                                    <th>Last Activity</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($sessions as $session)
+                    @if($sessions && $sessions->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            @php
-                                                $agent = new Jenssegers\Agent\Agent();
-                                                $agent->setUserAgent($session->user_agent);
-                                            @endphp
-                                            <i
-                                                class="bi bi-{{ $agent->isMobile() ? 'phone' : ($agent->isTablet() ? 'tablet' : 'laptop') }} me-2"></i>
-                                            {{ $agent->browser() }} on {{ $agent->platform() }}
-                                        </td>
-                                        <td>{{ $session->ip_address }}</td>
-                                        <td>{{ \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}
-                                        </td>
-                                        <td>
-                                            @if (session()->getId() !== $session->id)
-                                                <form method="POST"
-                                                    action="{{ route('settings.sessions.revoke', $session->id) }}"
-                                                    class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger"
-                                                        onclick="return confirm('Revoke this session?')">
-                                                        Revoke
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="badge bg-success">Current</span>
-                                            @endif
-                                        </td>
+                                        <th>Device</th>
+                                        <th>IP Address</th>
+                                        <th>Last Activity</th>
+                                        <th>Action</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @foreach ($sessions as $session)
+                                        <tr>
+                                            <td>
+                                                @php
+                                                    try {
+                                                        $agent = new Jenssegers\Agent\Agent();
+                                                        $agent->setUserAgent($session->user_agent ?? '');
+                                                        $deviceIcon = $agent->isMobile() ? 'phone' : ($agent->isTablet() ? 'tablet' : 'laptop');
+                                                        $browser = $agent->browser();
+                                                        $platform = $agent->platform();
+                                                    } catch (\Exception $e) {
+                                                        $deviceIcon = 'laptop';
+                                                        $browser = 'Unknown';
+                                                        $platform = 'Unknown';
+                                                    }
+                                                @endphp
+                                                <i class="bi bi-{{ $deviceIcon }} me-2"></i>
+                                                {{ $browser }} on {{ $platform }}
+                                            </td>
+                                            <td>{{ $session->ip_address ?? 'N/A' }}</td>
+                                            <td>
+                                                @if(isset($session->last_activity))
+                                                    {{ \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}
+                                                @else
+                                                    Unknown
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if (session()->getId() !== $session->id)
+                                                    <form method="POST"
+                                                        action="{{ route('settings.sessions.revoke', $session->id) }}"
+                                                        class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                            onclick="return confirm('Are you sure you want to revoke this session?')">
+                                                            Revoke
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="badge bg-success">Current</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">No active sessions found.</p>
+                    @endif
                 </div>
             </div>
 
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Security Logs</h5>
+                    <h5 class="card-title mb-0">Recent Security Logs</h5>
                 </div>
                 <div class="card-body">
-                    <div class="list-group">
-                        @foreach ($user->activityLogs()->whereIn('action', ['login', 'logout', 'change_password'])->latest()->take(5)->get() as $log)
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ ucfirst($log->action) }}</h6>
-                                    <small>{{ $log->created_at->diffForHumans() }}</small>
+                    @php
+                        $securityLogs = $user->activityLogs()
+                            ->whereIn('action', ['login', 'logout', 'change_password', 'update_security'])
+                            ->latest()
+                            ->take(5)
+                            ->get();
+                    @endphp
+                    
+                    @if($securityLogs->count() > 0)
+                        <div class="list-group">
+                            @foreach ($securityLogs as $log)
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ ucfirst(str_replace('_', ' ', $log->action)) }}</h6>
+                                        <small>{{ $log->created_at->diffForHumans() }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ $log->description ?? 'No description' }}</p>
+                                    <small class="text-muted">IP: {{ $log->ip_address ?? 'N/A' }}</small>
                                 </div>
-                                <p class="mb-1">{{ $log->description }}</p>
-                                <small class="text-muted">IP: {{ $log->ip_address }}</small>
-                            </div>
-                        @endforeach
-                    </div>
-                    <div class="mt-3">
-                        <a href="{{ route('logs.index') }}" class="btn btn-sm btn-primary">View All Logs</a>
-                    </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-3">
+                            <a href="{{ route('logs.index') }}" class="btn btn-sm btn-primary">View All Logs</a>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">No security logs found.</p>
+                    @endif
                 </div>
             </div>
         </div>

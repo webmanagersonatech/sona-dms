@@ -1,6 +1,4 @@
 <?php
-<<<<<<< HEAD
-// app/Providers/AuthServiceProvider.php
 
 namespace App\Providers;
 
@@ -39,27 +37,52 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // Define additional gates if needed
+        // Define gate for viewing reports
+        Gate::define('view-reports', function ($user) {
+            // Super admin can always view reports
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+
+            // Department admin can view reports
+            if ($user->isDepartmentAdmin()) {
+                return true;
+            }
+
+            // Check for specific permission if your system supports it
+            if (method_exists($user, 'hasPermission') && $user->hasPermission('view-reports')) {
+                return true;
+            }
+
+            // Regular users can only see their own data in reports
+            // So we allow them access but filter in the controller
+            return true; // Allow access but with data filtering
+        });
+
+        // Define more specific report gates if needed
+        Gate::define('view-file-reports', function ($user) {
+            return Gate::allows('view-reports');
+        });
+
+        Gate::define('view-transfer-reports', function ($user) {
+            return Gate::allows('view-reports');
+        });
+
+        Gate::define('view-user-reports', function ($user) {
+            return $user->isSuperAdmin() || $user->isDepartmentAdmin();
+        });
+
+        Gate::define('view-activity-reports', function ($user) {
+            return Gate::allows('view-reports');
+        });
+
+        Gate::define('export-reports', function ($user) {
+            return $user->isSuperAdmin() || $user->isDepartmentAdmin();
+        });
+
+        // Keep your existing gates
         Gate::define('view-departments', function ($user) {
             return $user->isSuperAdmin() || $user->isDepartmentAdmin();
         });
     }
 }
-=======
-
-namespace App\Providers;
-
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
-
-class AuthServiceProvider extends ServiceProvider
-{
-   public function boot(): void
-{
-    Gate::before(function ($user, $ability) {
-        return $user->hasPermission($ability) ? true : null;
-    });
-}
-}
-
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f

@@ -11,13 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:viewReports,App\Models\User');
+        // Use the gate we defined
+        $this->middleware('can:view-reports');
     }
 
     public function dashboard()
@@ -69,23 +69,40 @@ class ReportController extends Controller
             }
         }
 
-        // Get statistics
+        // Get daily uploads for the last 30 days
+        $dailyUploads = (clone $query)
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            ->whereDate('created_at', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        // Get statistics with all required keys
         $stats = [
             'total_files' => (clone $query)->count(),
             'total_size' => (clone $query)->sum('file_size'),
             'avg_size' => (clone $query)->avg('file_size'),
             'total_downloads' => (clone $query)->sum('download_count'),
             'total_views' => (clone $query)->sum('view_count'),
-            'by_extension' => (clone $query)->select('extension', DB::raw('count(*) as count'))
+            'by_type' => (clone $query)
+                ->select('extension', DB::raw('count(*) as count'))
                 ->groupBy('extension')
                 ->orderBy('count', 'desc')
                 ->limit(10)
-                ->get(),
-            'by_department' => (clone $query)->select('department_id', DB::raw('count(*) as count'))
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'file_type' => $item->extension,
+                        'count' => $item->count
+                    ];
+                }),
+            'by_department' => (clone $query)
+                ->select('department_id', DB::raw('count(*) as count'))
                 ->with('department')
                 ->groupBy('department_id')
                 ->get(),
-            'by_month' => (clone $query)->select(
+            'by_month' => (clone $query)
+                ->select(
                     DB::raw('YEAR(created_at) as year'),
                     DB::raw('MONTH(created_at) as month'),
                     DB::raw('count(*) as count')
@@ -95,7 +112,11 @@ class ReportController extends Controller
                 ->orderBy('year')
                 ->orderBy('month')
                 ->get(),
-            'top_files' => (clone $query)->orderBy('download_count', 'desc')->limit(10)->get(),
+            'top_files' => (clone $query)
+                ->orderBy('download_count', 'desc')
+                ->limit(10)
+                ->get(),
+            'daily_uploads' => $dailyUploads,
         ];
 
         $files = $query->latest()->paginate(20);
@@ -282,7 +303,7 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
-        $type = $request->get('type', 'excel');
+        $type = $request->get('type', 'csv');
         $reportType = $request->get('report_type', 'files');
 
         switch ($reportType) {
@@ -315,41 +336,27 @@ class ReportController extends Controller
 
         $files = $query->get();
 
-        if ($type === 'excel') {
-            return Excel::download(new class($files) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                private $files;
-                public function __construct($files) { $this->files = $files; }
-                public function headings(): array {
-                    return ['File Name', 'Type', 'Size', 'Owner', 'Department', 'Uploaded Date', 'Downloads', 'Views'];
-                }
-                public function array(): array {
-                    $data = [];
-                    foreach ($this->files as $file) {
-                        $data[] = [
-                            $file->name,
-                            strtoupper($file->extension),
-                            $this->formatBytes($file->file_size),
-                            $file->owner->name,
-                            $file->department->name ?? 'N/A',
-                            $file->created_at->format('Y-m-d H:i:s'),
-                            $file->download_count,
-                            $file->view_count
-                        ];
-                    }
-                    return $data;
-                }
-                private function formatBytes($bytes) {
-                    if ($bytes === 0) return '0 Bytes';
-                    $k = 1024;
-                    $sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                    $i = floor(log($bytes) / log($k));
-                    return round($bytes / pow($k, $i), 2) . ' ' . $sizes[$i];
-                }
-            }, 'files-report.xlsx');
-        } else {
+        if ($type === 'csv') {
+            return $this->exportToCsv($files, 'files-report', [
+                'File Name', 'Type', 'Size', 'Owner', 'Department', 'Uploaded Date', 'Downloads', 'Views'
+            ], function($file) {
+                return [
+                    $file->name,
+                    strtoupper($file->extension),
+                    $this->formatBytes($file->file_size),
+                    $file->owner->name,
+                    $file->department->name ?? 'N/A',
+                    $file->created_at->format('Y-m-d H:i:s'),
+                    $file->download_count,
+                    $file->view_count
+                ];
+            });
+        } elseif ($type === 'pdf') {
             $pdf = Pdf::loadView('reports.exports.files-pdf', compact('files'));
             return $pdf->download('files-report.pdf');
         }
+        
+        return back()->withErrors(['type' => 'Invalid export format']);
     }
 
     private function exportTransfers($request, $type)
@@ -368,33 +375,26 @@ class ReportController extends Controller
 
         $transfers = $query->get();
 
-        if ($type === 'excel') {
-            return Excel::download(new class($transfers) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                private $transfers;
-                public function __construct($transfers) { $this->transfers = $transfers; }
-                public function headings(): array {
-                    return ['Transfer ID', 'Sender', 'Receiver', 'Purpose', 'Expected Delivery', 'Actual Delivery', 'Status'];
-                }
-                public function array(): array {
-                    $data = [];
-                    foreach ($this->transfers as $transfer) {
-                        $data[] = [
-                            $transfer->transfer_id,
-                            $transfer->sender->name,
-                            $transfer->receiver->name ?? $transfer->receiver_name,
-                            $transfer->purpose,
-                            $transfer->expected_delivery_time->format('Y-m-d H:i:s'),
-                            $transfer->actual_delivery_time?->format('Y-m-d H:i:s') ?? 'Not delivered',
-                            ucfirst($transfer->status)
-                        ];
-                    }
-                    return $data;
-                }
-            }, 'transfers-report.xlsx');
-        } else {
+        if ($type === 'csv') {
+            return $this->exportToCsv($transfers, 'transfers-report', [
+                'Transfer ID', 'Sender', 'Receiver', 'Purpose', 'Expected Delivery', 'Actual Delivery', 'Status'
+            ], function($transfer) {
+                return [
+                    $transfer->transfer_id,
+                    $transfer->sender->name,
+                    $transfer->receiver->name ?? $transfer->receiver_name,
+                    $transfer->purpose,
+                    $transfer->expected_delivery_time->format('Y-m-d H:i:s'),
+                    $transfer->actual_delivery_time?->format('Y-m-d H:i:s') ?? 'Not delivered',
+                    ucfirst($transfer->status)
+                ];
+            });
+        } elseif ($type === 'pdf') {
             $pdf = Pdf::loadView('reports.exports.transfers-pdf', compact('transfers'));
             return $pdf->download('transfers-report.pdf');
         }
+        
+        return back()->withErrors(['type' => 'Invalid export format']);
     }
 
     private function exportUsers($request, $type)
@@ -410,33 +410,26 @@ class ReportController extends Controller
 
         $users = $query->get();
 
-        if ($type === 'excel') {
-            return Excel::download(new class($users) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                private $users;
-                public function __construct($users) { $this->users = $users; }
-                public function headings(): array {
-                    return ['Name', 'Email', 'Role', 'Department', 'Status', 'Last Login', 'Files Count'];
-                }
-                public function array(): array {
-                    $data = [];
-                    foreach ($this->users as $user) {
-                        $data[] = [
-                            $user->name,
-                            $user->email,
-                            $user->role->name,
-                            $user->department->name ?? 'N/A',
-                            ucfirst($user->status),
-                            $user->last_login_at?->format('Y-m-d H:i:s') ?? 'Never',
-                            $user->files()->count()
-                        ];
-                    }
-                    return $data;
-                }
-            }, 'users-report.xlsx');
-        } else {
+        if ($type === 'csv') {
+            return $this->exportToCsv($users, 'users-report', [
+                'Name', 'Email', 'Role', 'Department', 'Status', 'Last Login', 'Files Count'
+            ], function($user) {
+                return [
+                    $user->name,
+                    $user->email,
+                    $user->role->name,
+                    $user->department->name ?? 'N/A',
+                    ucfirst($user->status),
+                    $user->last_login_at?->format('Y-m-d H:i:s') ?? 'Never',
+                    $user->files()->count()
+                ];
+            });
+        } elseif ($type === 'pdf') {
             $pdf = Pdf::loadView('reports.exports.users-pdf', compact('users'));
             return $pdf->download('users-report.pdf');
         }
+        
+        return back()->withErrors(['type' => 'Invalid export format']);
     }
 
     private function exportActivities($request, $type)
@@ -452,33 +445,61 @@ class ReportController extends Controller
 
         $activities = $query->get();
 
-        if ($type === 'excel') {
-            return Excel::download(new class($activities) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                private $activities;
-                public function __construct($activities) { $this->activities = $activities; }
-                public function headings(): array {
-                    return ['Date/Time', 'User', 'Action', 'Module', 'Description', 'IP Address', 'Device'];
-                }
-                public function array(): array {
-                    $data = [];
-                    foreach ($this->activities as $activity) {
-                        $data[] = [
-                            $activity->created_at->format('Y-m-d H:i:s'),
-                            $activity->user->name ?? 'System',
-                            ucfirst(str_replace('_', ' ', $activity->action)),
-                            ucfirst($activity->module),
-                            $activity->description,
-                            $activity->ip_address ?? 'N/A',
-                            $activity->device_type ?? 'N/A'
-                        ];
-                    }
-                    return $data;
-                }
-            }, 'activities-report.xlsx');
-        } else {
+        if ($type === 'csv') {
+            return $this->exportToCsv($activities, 'activities-report', [
+                'Date/Time', 'User', 'Action', 'Module', 'Description', 'IP Address', 'Device'
+            ], function($activity) {
+                return [
+                    $activity->created_at->format('Y-m-d H:i:s'),
+                    $activity->user->name ?? 'System',
+                    ucfirst(str_replace('_', ' ', $activity->action)),
+                    ucfirst($activity->module),
+                    $activity->description,
+                    $activity->ip_address ?? 'N/A',
+                    $activity->device_type ?? 'N/A'
+                ];
+            });
+        } elseif ($type === 'pdf') {
             $pdf = Pdf::loadView('reports.exports.activities-pdf', compact('activities'));
             return $pdf->download('activities-report.pdf');
         }
+        
+        return back()->withErrors(['type' => 'Invalid export format']);
+    }
+
+    /**
+     * Generic CSV export function
+     */
+    private function exportToCsv($data, $fileName, $headers, $rowCallback)
+    {
+        $fileName = $fileName . '-' . date('Y-m-d-His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+        
+        $callback = function() use ($data, $headers, $rowCallback) {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Add headers
+            fputcsv($file, $headers);
+            
+            // Add data rows
+            foreach ($data as $item) {
+                fputcsv($file, $rowCallback($item));
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
     }
 
     private function getFileStats()
@@ -584,5 +605,14 @@ class ReportController extends Controller
                 ->limit(5)
                 ->get(),
         ];
+    }
+
+    private function formatBytes($bytes)
+    {
+        if ($bytes === 0) return '0 Bytes';
+        $k = 1024;
+        $sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        $i = floor(log($bytes) / log($k));
+        return round($bytes / pow($k, $i), 2) . ' ' . $sizes[$i];
     }
 }

@@ -11,11 +11,17 @@ use Jenssegers\Agent\Agent;
 
 class SettingsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function security()
     {
         $user = Auth::user();
         
-        $settings = $user->settings ?? [];
+        // Decode settings if it's a string, or initialize if null
+        $settings = $this->getUserSettings($user);
         
         $sessions = DB::table('sessions')
             ->where('user_id', $user->id)
@@ -29,25 +35,28 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
-            'two_factor_enabled' => 'boolean',
+        $validated = $request->validate([
+            'two_factor_enabled' => 'nullable|boolean',
             'session_timeout' => 'nullable|integer|min:5|max:480',
-            'email_on_login' => 'boolean',
-            'email_on_device' => 'boolean',
-            'require_otp_download' => 'boolean',
-            'notify_file_access' => 'boolean',
+            'email_on_login' => 'nullable|boolean',
+            'email_on_device' => 'nullable|boolean',
+            'require_otp_download' => 'nullable|boolean',
+            'notify_file_access' => 'nullable|boolean',
         ]);
 
-        $settings = $user->settings ?? [];
+        // Get current settings
+        $settings = $this->getUserSettings($user);
         
-        $settings['two_factor_enabled'] = $request->boolean('two_factor_enabled');
-        $settings['session_timeout'] = $request->session_timeout ?? 30;
-        $settings['email_on_login'] = $request->boolean('email_on_login');
-        $settings['email_on_device'] = $request->boolean('email_on_device');
-        $settings['require_otp_download'] = $request->boolean('require_otp_download');
-        $settings['notify_file_access'] = $request->boolean('notify_file_access');
+        // Update settings
+        $settings['two_factor_enabled'] = $request->boolean('two_factor_enabled', false);
+        $settings['session_timeout'] = (int) $request->input('session_timeout', 30);
+        $settings['email_on_login'] = $request->boolean('email_on_login', true);
+        $settings['email_on_device'] = $request->boolean('email_on_device', true);
+        $settings['require_otp_download'] = $request->boolean('require_otp_download', true);
+        $settings['notify_file_access'] = $request->boolean('notify_file_access', true);
 
-        $user->settings = $settings;
+        // Save as JSON
+        $user->settings = json_encode($settings);
         $user->save();
 
         $this->logActivity(
@@ -86,7 +95,7 @@ class SettingsController extends Controller
     public function notifications()
     {
         $user = Auth::user();
-        $settings = $user->settings ?? [];
+        $settings = $this->getUserSettings($user);
 
         return view('settings.notifications', compact('user', 'settings'));
     }
@@ -95,25 +104,25 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
-            'email_notifications' => 'boolean',
-            'push_notifications' => 'boolean',
-            'file_shared_notification' => 'boolean',
-            'transfer_created_notification' => 'boolean',
-            'transfer_delivered_notification' => 'boolean',
-            'file_accessed_notification' => 'boolean',
+        $validated = $request->validate([
+            'email_notifications' => 'nullable|boolean',
+            'push_notifications' => 'nullable|boolean',
+            'file_shared_notification' => 'nullable|boolean',
+            'transfer_created_notification' => 'nullable|boolean',
+            'transfer_delivered_notification' => 'nullable|boolean',
+            'file_accessed_notification' => 'nullable|boolean',
         ]);
 
-        $settings = $user->settings ?? [];
+        $settings = $this->getUserSettings($user);
         
-        $settings['email_notifications'] = $request->boolean('email_notifications');
-        $settings['push_notifications'] = $request->boolean('push_notifications');
-        $settings['file_shared_notification'] = $request->boolean('file_shared_notification');
-        $settings['transfer_created_notification'] = $request->boolean('transfer_created_notification');
-        $settings['transfer_delivered_notification'] = $request->boolean('transfer_delivered_notification');
-        $settings['file_accessed_notification'] = $request->boolean('file_accessed_notification');
+        $settings['email_notifications'] = $request->boolean('email_notifications', true);
+        $settings['push_notifications'] = $request->boolean('push_notifications', false);
+        $settings['file_shared_notification'] = $request->boolean('file_shared_notification', true);
+        $settings['transfer_created_notification'] = $request->boolean('transfer_created_notification', true);
+        $settings['transfer_delivered_notification'] = $request->boolean('transfer_delivered_notification', true);
+        $settings['file_accessed_notification'] = $request->boolean('file_accessed_notification', true);
 
-        $user->settings = $settings;
+        $user->settings = json_encode($settings);
         $user->save();
 
         return redirect()->route('settings.notifications')
@@ -123,7 +132,7 @@ class SettingsController extends Controller
     public function appearance()
     {
         $user = Auth::user();
-        $settings = $user->settings ?? [];
+        $settings = $this->getUserSettings($user);
 
         return view('settings.appearance', compact('user', 'settings'));
     }
@@ -132,39 +141,99 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
 
-        $request->validate([
+        $validated = $request->validate([
             'theme' => 'required|in:light,dark,auto',
-            'sidebar_collapsed' => 'boolean',
-            'dense_mode' => 'boolean',
+            'sidebar_collapsed' => 'nullable|boolean',
+            'dense_mode' => 'nullable|boolean',
         ]);
 
-        $settings = $user->settings ?? [];
+        $settings = $this->getUserSettings($user);
         
-        $settings['theme'] = $request->theme;
-        $settings['sidebar_collapsed'] = $request->boolean('sidebar_collapsed');
-        $settings['dense_mode'] = $request->boolean('dense_mode');
+        $settings['theme'] = $request->input('theme', 'light');
+        $settings['sidebar_collapsed'] = $request->boolean('sidebar_collapsed', false);
+        $settings['dense_mode'] = $request->boolean('dense_mode', false);
 
-        $user->settings = $settings;
+        $user->settings = json_encode($settings);
         $user->save();
 
         return redirect()->route('settings.appearance')
             ->with('success', 'Appearance settings updated successfully.');
     }
 
+    /**
+     * Get user settings as array
+     */
+    private function getUserSettings($user)
+    {
+        // If settings is null or empty, return default settings
+        if (empty($user->settings)) {
+            return $this->getDefaultSettings();
+        }
+        
+        // If settings is already an array (casted by Laravel), return it
+        if (is_array($user->settings)) {
+            return $user->settings;
+        }
+        
+        // If settings is a string, decode it
+        if (is_string($user->settings)) {
+            $decoded = json_decode($user->settings, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        
+        // Fallback to default settings
+        return $this->getDefaultSettings();
+    }
+
+    /**
+     * Get default settings array
+     */
+    private function getDefaultSettings()
+    {
+        return [
+            'two_factor_enabled' => false,
+            'session_timeout' => 30,
+            'email_on_login' => true,
+            'email_on_device' => true,
+            'require_otp_download' => true,
+            'notify_file_access' => true,
+            'email_notifications' => true,
+            'push_notifications' => false,
+            'file_shared_notification' => true,
+            'transfer_created_notification' => true,
+            'transfer_delivered_notification' => true,
+            'file_accessed_notification' => true,
+            'theme' => 'light',
+            'sidebar_collapsed' => false,
+            'dense_mode' => false,
+        ];
+    }
+
+    /**
+     * Log user activity
+     */
     private function logActivity($user, $request, $action, $module, $description)
     {
-        $agent = new Agent();
-        
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => $action,
-            'module' => $module,
-            'description' => $description,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'device_type' => $agent->isMobile() ? 'mobile' : ($agent->isTablet() ? 'tablet' : 'desktop'),
-            'browser' => $agent->browser(),
-            'platform' => $agent->platform(),
-        ]);
+        try {
+            $agent = new Agent();
+            $agent->setUserAgent($request->userAgent());
+            
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => $action,
+                'module' => $module,
+                'description' => $description,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'device_type' => $agent->isMobile() ? 'mobile' : ($agent->isTablet() ? 'tablet' : 'desktop'),
+                'browser' => $agent->browser(),
+                'platform' => $agent->platform(),
+                'location' => null,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to log activity: ' . $e->getMessage());
+        }
     }
 }

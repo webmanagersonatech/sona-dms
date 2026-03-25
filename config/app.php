@@ -70,11 +70,7 @@ return [
     |
     */
 
-<<<<<<< HEAD
     'timezone' => 'UTC',
-=======
-   'timezone' => 'Asia/Kolkata',
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
 
     /*
     |--------------------------------------------------------------------------
@@ -172,12 +168,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-<<<<<<< HEAD
         Jenssegers\Agent\AgentServiceProvider::class,
-=======
-        App\Providers\ViewServiceProvider::class,
-
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     ])->toArray(),
 
     /*
@@ -192,11 +183,7 @@ return [
     */
 
     'aliases' => Facade::defaultAliases()->merge([
-<<<<<<< HEAD
        'Agent' => Jenssegers\Agent\Facades::class,
-=======
-        // 'Example' => App\Facades\Example::class,
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     ])->toArray(),
 
 ];

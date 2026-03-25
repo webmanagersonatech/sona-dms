@@ -166,7 +166,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">{{ $user->role->name ?? 'N/A' }}</span>
+                                    <span>{{ $user->role->name ?? 'N/A' }}</span>
                                 </td>
                                 <td>
                                     @if ($user->department)

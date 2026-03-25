@@ -1,23 +1,15 @@
 <?php
-<<<<<<< HEAD
 // app/Models/User.php
-=======
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-<<<<<<< HEAD
-=======
-use Illuminate\Database\Eloquent\SoftDeletes;
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-<<<<<<< HEAD
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
@@ -28,39 +20,12 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'
-=======
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
-
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role_id',
-        'department_id',
-        'employee_id',
-        'phone',
-        'is_active',
-        'is_locked',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-<<<<<<< HEAD
         'last_login_at' => 'datetime',
-=======
-        'password' => 'hashed',
-        'is_active' => 'boolean',
-        'is_locked' => 'boolean',
-        'two_factor_recovery_codes' => 'array',
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
+        'settings' => 'array',
     ];
 
     public function role()
@@ -78,7 +43,6 @@ class User extends Authenticatable
         return $this->hasMany(File::class, 'owner_id');
     }
 
-<<<<<<< HEAD
     public function sharedFiles()
     {
         return $this->belongsToMany(File::class, 'file_shares', 'shared_with', 'file_id')
@@ -87,9 +51,6 @@ class User extends Authenticatable
     }
 
     public function transfers()
-=======
-    public function sentTransfers()
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     {
         return $this->hasMany(Transfer::class, 'sender_id');
     }
@@ -99,25 +60,11 @@ class User extends Authenticatable
         return $this->hasMany(Transfer::class, 'receiver_id');
     }
 
-<<<<<<< HEAD
-=======
-    public function deviceSessions()
-    {
-        return $this->hasMany(DeviceSession::class);
-    }
-
-    public function otps()
-    {
-        return $this->hasMany(Otp::class);
-    }
-
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     public function activityLogs()
     {
         return $this->hasMany(ActivityLog::class);
     }
 
-<<<<<<< HEAD
     public function otpLogs()
     {
         return $this->hasMany(OtpLog::class);
@@ -225,50 +172,7 @@ class User extends Authenticatable
         return $this->sharedFiles()
             ->wherePivot('status', 'active')
             ->wherePivot('expires_at', '<=', now());
-=======
-public function hasPermission(string $permission): bool
-{
-    // Super admin bypass
-    if ($this->role?->slug === 'super-admin') {
-        return true;
     }
 
-    // Permissions are already cast to array in Role model
-    $permissions = $this->role->permissions ?? [];
-
-    // Wildcard support
-    if (in_array('*', $permissions, true)) {
-        return true;
-    }
-
-    return in_array($permission, $permissions, true);
-}
-
-
-
-    public function isSuperAdmin()
-    {
-        return $this->role->slug === 'super-admin';
-    }
-
-    public function isOwner()
-    {
-        return $this->role->slug === 'owner';
-    }
-
-    public function isSender()
-    {
-        return $this->role->slug === 'sender';
-    }
-
-    public function isReceiver()
-    {
-        return $this->role->slug === 'receiver';
-    }
-
-    public function isThirdParty()
-    {
-        return $this->role->slug === 'third-party';
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
-    }
+    
 }

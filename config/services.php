@@ -30,19 +30,8 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-<<<<<<< HEAD
     'brevo' => [
         'api_key' => env('BREVO_API_KEY'),
     ],
 
-=======
-
-    'brevo' => [
-        'api_key' => env('BREVO_API_KEY'),
-        'sender_email' => env('BREVO_SENDER_EMAIL'),
-        'sender_name' => env('BREVO_SENDER_NAME'),
-    ],
-
-
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
 ];

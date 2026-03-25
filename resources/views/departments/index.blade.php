@@ -140,10 +140,10 @@
                                         class="text-muted">{{ Str::limit($department->description, 50) ?? 'No description' }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">{{ number_format($department->users_count) }}</span>
+                                    <span>{{ number_format($department->users_count) }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-warning">{{ number_format($department->files_count) }}</span>
+                                    <span>{{ number_format($department->files_count) }}</span>
                                 </td>
                                 <td>
                                     @if ($department->status === 'active')
@@ -193,16 +193,7 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <div>
-                    Showing {{ $departments->firstItem() ?? 0 }} to {{ $departments->lastItem() ?? 0 }} of
-                    {{ $departments->total() }} entries
-                </div>
-                <div>
-                    {{ $departments->appends(request()->query())->links() }}
-                </div>
-            </div>
+
         </div>
     </div>
 

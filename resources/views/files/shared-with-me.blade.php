@@ -140,14 +140,14 @@
                     All Shared Files
                 @endif
             </h5>
-            <div class="btn-group">
+            {{-- <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print()">
                     <i class="bi bi-printer"></i> Print
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-success" onclick="exportTable()">
                     <i class="bi bi-download"></i> Export
                 </button>
-            </div>
+            </div> --}}
         </div>
         <div class="card-body">
             <!-- Search and Filter -->

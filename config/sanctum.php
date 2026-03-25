@@ -20,10 +20,7 @@ return [
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort()
     ))),
-<<<<<<< HEAD
 
-=======
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     /*
     |--------------------------------------------------------------------------
     | Sanctum Guards
@@ -78,14 +75,9 @@ return [
     */
 
     'middleware' => [
-<<<<<<< HEAD
         'authenticate_session' => Laravel\Sanctum\Http\Middleware\AuthenticateSession::class,
         'encrypt_cookies' => App\Http\Middleware\EncryptCookies::class,
         'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
-=======
-        'verify_csrf_token' => App\Http\Middleware\VerifyCsrfToken::class,
-        'encrypt_cookies' => App\Http\Middleware\EncryptCookies::class,
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
     ],
 
 ];

@@ -1,4 +1,3 @@
-{{-- resources/views/dashboard/super-admin.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Super Admin Dashboard')
@@ -61,7 +60,7 @@
 
     <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-xl-6">
+        <div class="col-xl-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Users by Department</h5>
@@ -77,7 +76,7 @@
             </div>
         </div>
 
-        <div class="col-xl-6">
+        <div class="col-xl-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Activities</h5>
@@ -127,13 +126,13 @@
 
     <!-- Recent Files and Transfers Row -->
     <div class="row g-4">
-        <div class="col-xl-6">
+        <div class="col-xl-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Files</h5>
                     <a href="{{ route('files.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
@@ -193,13 +192,13 @@
             </div>
         </div>
 
-        <div class="col-xl-6">
+        <div class="col-xl-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Transfers</h5>
                     <a href="{{ route('transfers.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body ">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>

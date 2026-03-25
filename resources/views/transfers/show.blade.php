@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {{-- resources/views/transfers/show.blade.php --}}
 @extends('layouts.app')
 
@@ -31,7 +30,7 @@
                     <div class="timeline mb-4">
                         <div class="timeline-item">
                             <div class="timeline-badge bg-primary">
-                                <i class="bi bi-plus-circle"></i>
+                                <i class="bi bi-plus-circle-fill"></i>
                             </div>
                             <div class="timeline-content">
                                 <strong>Transfer Created</strong>
@@ -68,7 +67,7 @@
                         @if ($transfer->status === 'delivered')
                             <div class="timeline-item">
                                 <div class="timeline-badge bg-success">
-                                    <i class="bi bi-check-circle"></i>
+                                    <i class="bi bi-check-circle-fill"></i>
                                 </div>
                                 <div class="timeline-content">
                                     <strong>Delivered</strong>
@@ -89,7 +88,7 @@
                         @if (in_array($transfer->status, ['cancelled', 'failed']))
                             <div class="timeline-item">
                                 <div class="timeline-badge bg-danger">
-                                    <i class="bi bi-x-circle"></i>
+                                    <i class="bi bi-x-circle-fill"></i>
                                 </div>
                                 <div class="timeline-content">
                                     <strong>{{ ucfirst($transfer->status) }}</strong>
@@ -102,11 +101,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <table class="table table-sm">
-                                <tr>
+                                 <tr>
                                     <th style="width: 120px;">Transfer ID</th>
                                     <td><strong>{{ $transfer->transfer_id }}</strong></td>
-                                </tr>
-                                <tr>
+                                 </tr>
+                                 <tr>
                                     <th>Status</th>
                                     <td>
                                         @php
@@ -120,81 +119,22 @@
                                         @endphp
                                         <span class="badge bg-{{ $statusColors[$transfer->status] ?? 'secondary' }}">
                                             {{ ucfirst(str_replace('_', ' ', $transfer->status)) }}
-=======
-@extends('layouts.app')
-
-@section('title', 'Transfer Details')
-
-@section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Transfer Information</h3>
-                    <div class="card-tools">
-                        @php
-                            $statusColors = [
-                                'pending' => 'warning',
-                                'in_transit' => 'info',
-                                'delivered' => 'primary',
-                                'received' => 'success',
-                                'cancelled' => 'danger',
-                            ];
-                        @endphp
-                        <span class="badge badge-{{ $statusColors[$transfer->status] ?? 'secondary' }}">
-                            {{ ucfirst(str_replace('_', ' ', $transfer->status)) }}
-                        </span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Transfer Details</h5>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th>Transfer ID:</th>
-                                    <td>{{ $transfer->transfer_uuid }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Type:</th>
-                                    <td>
-                                        <span class="badge badge-{{ $transfer->transfer_type === 'physical' ? 'info' : 'success' }}">
-                                            {{ ucfirst($transfer->transfer_type) }}
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
                                         </span>
                                     </td>
-                                </tr>
-                                <tr>
-<<<<<<< HEAD
+                                 </tr>
+                                 <tr>
                                     <th>Purpose</th>
                                     <td>{{ $transfer->purpose }}</td>
-                                </tr>
-                                <tr>
+                                 </tr>
+                                 <tr>
                                     <th>Description</th>
                                     <td>{{ $transfer->description ?? 'N/A' }}</td>
-=======
-                                    <th>File:</th>
-                                    <td>
-                                        <i class="fas fa-file"></i>
-                                        {{ $transfer->file->original_name }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Purpose:</th>
-                                    <td>{{ $transfer->purpose }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Created:</th>
-                                    <td>{{ $transfer->created_at->format('M d, Y H:i') }}</td>
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
-                                </tr>
+                                 </tr>
                             </table>
                         </div>
                         <div class="col-md-6">
-<<<<<<< HEAD
                             <table class="table table-sm">
-                                <tr>
+                                 <tr>
                                     <th style="width: 120px;">Expected</th>
                                     <td>
                                         {{ $transfer->expected_delivery_time->format('Y-m-d H:i') }}
@@ -202,50 +142,29 @@
                                             <span class="badge bg-danger">Overdue</span>
                                         @endif
                                     </td>
-                                </tr>
+                                 </tr>
                                 @if ($transfer->actual_delivery_time)
-                                    <tr>
+                                     <tr>
                                         <th>Delivered</th>
                                         <td>{{ $transfer->actual_delivery_time->format('Y-m-d H:i') }}</td>
-                                    </tr>
+                                     </tr>
                                 @endif
                                 @if ($transfer->courier_name)
-                                    <tr>
+                                     <tr>
                                         <th>Courier</th>
                                         <td>{{ $transfer->courier_name }}</td>
-                                    </tr>
+                                     </tr>
                                 @endif
                                 @if ($transfer->tracking_number)
-                                    <tr>
+                                     <tr>
                                         <th>Tracking</th>
                                         <td>{{ $transfer->tracking_number }}</td>
-                                    </tr>
-=======
-                            <h5>Parties Involved</h5>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th>Sender:</th>
-                                    <td>{{ $transfer->sender->name }} ({{ $transfer->sender->department->name }})</td>
-                                </tr>
-                                <tr>
-                                    <th>Receiver:</th>
-                                    <td>{{ $transfer->receiver->name }} ({{ $transfer->receiver->department->name }})</td>
-                                </tr>
-                                @if($transfer->third_party_involved)
-                                <tr>
-                                    <th>Third Party:</th>
-                                    <td>
-                                        {{ $transfer->third_party_name }}
-                                        <br><small>{{ $transfer->third_party_email }}</small>
-                                    </td>
-                                </tr>
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
+                                     </tr>
                                 @endif
                             </table>
                         </div>
                     </div>
 
-<<<<<<< HEAD
                     @if ($transfer->signature)
                         <hr>
                         <h6>Digital Signature</h6>
@@ -268,7 +187,7 @@
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center">
-                            <i class="bi {{ $transfer->file->icon }} me-3" style="font-size: 2rem;"></i>
+                            <i class="bi {{ $transfer->file->icon ?? 'bi-file' }} me-3" style="font-size: 2rem;"></i>
                             <div>
                                 <h6 class="mb-1">{{ $transfer->file->name }}</h6>
                                 <small class="text-muted">
@@ -283,110 +202,10 @@
                                 <a href="{{ route('files.download', $transfer->file) }}" class="btn btn-sm btn-success">
                                     <i class="bi bi-download"></i> Download
                                 </a>
-=======
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h5>Delivery Information</h5>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th>Expected Delivery:</th>
-                                    <td>{{ $transfer->expected_delivery_time->format('M d, Y H:i') }}</td>
-                                </tr>
-                                @if($transfer->actual_delivery_time)
-                                <tr>
-                                    <th>Actual Delivery:</th>
-                                    <td>{{ $transfer->actual_delivery_time->format('M d, Y H:i') }}</td>
-                                </tr>
-                                @endif
-                                @if($transfer->delivery_location)
-                                <tr>
-                                    <th>Delivery Location:</th>
-                                    <td>{{ $transfer->delivery_location }}</td>
-                                </tr>
-                                @endif
-                            </table>
-                        </div>
-                    </div>
-
-                    @if($transfer->notes)
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h5>Notes</h5>
-                            <div class="alert alert-info">
-                                {{ $transfer->notes }}
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h5>Transfer Actions</h5>
-                            <div class="btn-group" role="group">
-                                @if($transfer->sender_id === auth()->id())
-                                    @if($transfer->status === 'pending')
-                                    <form action="{{ route('transfers.send', $transfer) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-paper-plane"></i> Send Transfer
-                                        </button>
-                                    </form>
-                                    @endif
-                                    
-                                    @if($transfer->status === 'in_transit')
-                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#deliverModal">
-                                        <i class="fas fa-check-circle"></i> Mark as Delivered
-                                    </button>
-                                    @endif
-
-                                    @if($transfer->transfer_type === 'cloud' && in_array($transfer->status, ['pending', 'in_transit']))
-                                    <form action="{{ route('transfers.cloud.share', $transfer) }}" method="POST" class="ml-2">
-                                        @csrf
-                                        <button type="submit" class="btn btn-info">
-                                            <i class="fas fa-cloud-share-alt"></i> Create Cloud Share
-                                        </button>
-                                    </form>
-                                    @endif
-                                @endif
-
-                                @if($transfer->receiver_id === auth()->id())
-                                    @if($transfer->status === 'delivered')
-                                    <form action="{{ route('transfers.receive', $transfer) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-check"></i> Confirm Receipt
-                                        </button>
-                                    </form>
-                                    @endif
-
-                                    @if($transfer->third_party_involved && $transfer->status === 'received')
-                                    <form action="{{ route('transfers.third-party.request', $transfer) }}" method="POST" class="ml-2">
-                                        @csrf
-                                        <button type="submit" class="btn btn-warning">
-                                            <i class="fas fa-user-friends"></i> Request Third-Party Access
-                                        </button>
-                                    </form>
-                                    @endif
-                                @endif
-
-                                @if(in_array($transfer->status, ['pending', 'in_transit']) && 
-                                    ($transfer->sender_id === auth()->id() || $transfer->receiver_id === auth()->id()))
-                                <form action="{{ route('transfers.cancel', $transfer) }}" method="POST" class="ml-2">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">
-                                        <i class="fas fa-times"></i> Cancel Transfer
-                                    </button>
-                                </form>
-                                @endif
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
                             </div>
                         </div>
                     </div>
                 </div>
-<<<<<<< HEAD
             @endif
 
             <!-- Activity Log -->
@@ -414,26 +233,6 @@
                                     </small>
                                 </div>
                             </div>
-=======
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h3 class="card-title">Transfer Activity</h3>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        @foreach($transfer->activityLogs()->latest('id')->limit(10)->get() as $activity)
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <small>{{ $activity->description }}</small>
-                                <small class="text-muted">{{ $activity->performed_at->diffForHumans() }}</small>
-                            </div>
-                            @if($activity->user)
-                            <small class="text-muted">By: {{ $activity->user->name }}</small>
-                            @endif
-                        </div>
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f
                         @endforeach
                     </div>
                 </div>
@@ -441,7 +240,6 @@
         </div>
 
         <div class="col-md-4">
-<<<<<<< HEAD
             <!-- Sender Information -->
             <div class="card">
                 <div class="card-header">
@@ -503,7 +301,7 @@
                             <div class="rounded-circle bg-warning d-inline-flex align-items-center justify-content-center mb-3"
                                 style="width: 80px; height: 80px;">
                                 <span class="text-white" style="font-size: 2rem;">
-                                    <i class="bi bi-person"></i>
+                                    <i class="bi bi-person-fill"></i>
                                 </span>
                             </div>
                             <h6>{{ $transfer->receiver_name }}</h6>
@@ -620,10 +418,24 @@
             color: white;
         }
 
+        .timeline-badge i {
+            font-size: 18px;
+        }
+
         .timeline-content {
             background: #f8f9fa;
             padding: 10px 15px;
             border-radius: 8px;
+        }
+
+        /* Dark mode support */
+        [data-theme="dark"] .timeline-content {
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] .timeline-content small {
+            color: #aaa !important;
         }
     </style>
 @endpush
@@ -631,11 +443,26 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
-        // Generate QR Code
-        new QRCode(document.getElementById("qrcode"), {
-            text: "{{ route('transfers.track', $transfer->transfer_id) }}",
-            width: 200,
-            height: 200
+        // Generate QR Code with error handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrcodeDiv = document.getElementById("qrcode");
+            if (qrcodeDiv && typeof QRCode !== 'undefined') {
+                try {
+                    new QRCode(qrcodeDiv, {
+                        text: "{{ route('transfers.track', $transfer->transfer_id) }}",
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (error) {
+                    console.error('QR Code generation failed:', error);
+                    qrcodeDiv.innerHTML = '<p class="text-muted">QR code unavailable</p>';
+                }
+            } else {
+                console.warn('QRCode library not loaded or element not found');
+            }
         });
 
         function cancelTransfer() {
@@ -647,115 +474,3 @@
         }
     </script>
 @endpush
-=======
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">File Information</h3>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm">
-                        <tr>
-                            <th>File Name:</th>
-                            <td>{{ $transfer->file->original_name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Type:</th>
-                            <td>{{ strtoupper($transfer->file->extension) }}</td>
-                        </tr>
-                        <tr>
-                            <th>Size:</th>
-                            <td>{{ $transfer->file->formatted_size }}</td>
-                        </tr>
-                        <tr>
-                            <th>Owner:</th>
-                            <td>{{ $transfer->file->owner->name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Status:</th>
-                            <td>
-                                @if($transfer->file->is_archived)
-                                <span class="badge badge-secondary">Archived</span>
-                                @elseif($transfer->file->isExpired())
-                                <span class="badge badge-warning">Expired</span>
-                                @else
-                                <span class="badge badge-success">Active</span>
-                                @endif
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <div class="mt-3">
-                        <a href="{{ route('files.show', $transfer->file) }}" class="btn btn-info btn-block">
-                            <i class="fas fa-eye"></i> View File Details
-                        </a>
-                        @if($transfer->file->canBeAccessedBy(auth()->user()))
-                        <a href="{{ route('files.download', $transfer->file) }}" class="btn btn-success btn-block mt-2">
-                            <i class="fas fa-download"></i> Download File
-                        </a>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            @if($transfer->delivery_location)
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h3 class="card-title">Delivery Location</h3>
-                </div>
-                <div class="card-body">
-                    <p><strong>Location:</strong> {{ $transfer->delivery_location }}</p>
-                    @if($transfer->latitude && $transfer->longitude)
-                    <div id="map" style="height: 200px; background: #f0f0f0;" class="rounded">
-                        <!-- In production, integrate with Google Maps -->
-                        <div class="text-center text-muted py-5">
-                            <i class="fas fa-map-marker-alt fa-2x"></i>
-                            <p class="mt-2">Map integration available<br>in production</p>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
-
-<!-- Deliver Modal -->
-@if($transfer->sender_id === auth()->id() && $transfer->status === 'in_transit')
-<div class="modal fade" id="deliverModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form action="{{ route('transfers.deliver', $transfer) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Mark as Delivered</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="delivery_location">Delivery Location *</label>
-                        <input type="text" class="form-control" id="delivery_location" name="delivery_location" required placeholder="e.g., Reception Desk, Building A">
-                    </div>
-                    <div class="form-group">
-                        <label for="latitude">Latitude (Optional)</label>
-                        <input type="number" step="any" class="form-control" id="latitude" name="latitude" placeholder="e.g., 12.345678">
-                    </div>
-                    <div class="form-group">
-                        <label for="longitude">Longitude (Optional)</label>
-                        <input type="number" step="any" class="form-control" id="longitude" name="longitude" placeholder="e.g., 98.765432">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Mark as Delivered</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endif
-@endsection
->>>>>>> 0d0e6d232ac65287743e92e7c7778391eab60c9f

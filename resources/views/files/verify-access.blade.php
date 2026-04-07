@@ -21,12 +21,27 @@
 
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i>
+                        @php
+                            $share = \App\Models\FileShare::where('file_id', $file->id)
+                                ->where('shared_with', Auth::id())
+                                ->where('status', 'active')
+                                ->first();
+                        @endphp
+                        @if($share && $share->share_reason)
+                            <div class="mb-2"><strong>Reason for sharing:</strong> {{ $share->share_reason }}</div>
+                        @endif
                         An OTP has been sent to the file owner ({{ $file->owner->email }}) for approval.
                         Please ask them to share the OTP with you.
                     </div>
 
                     <form method="POST" action="{{ route('files.access.confirm', $file->uuid) }}" id="otpForm">
                         @csrf
+
+                        <div class="mb-4">
+                            <label for="access_reason" class="form-label">Reason for Opening</label>
+                            <textarea name="access_reason" id="access_reason" class="form-control" rows="3" placeholder="Enter your reason for accessing this file..." required></textarea>
+                            <small class="text-muted">This reason will be recorded for security auditing.</small>
+                        </div>
 
                         <div class="mb-4">
                             <label class="form-label">Enter OTP Code</label>

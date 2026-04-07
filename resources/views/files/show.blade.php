@@ -10,9 +10,16 @@
                     <h5 class="card-title mb-0">File Details</h5>
                     <div class="btn-group">
 
-                        {{-- <a href="{{ route('files.download', $file) }}" class="btn btn-success btn-sm">
-                            <i class="bi bi-download"></i> Download
-                        </a> --}}
+                        @if (in_array($permission, ['download', 'edit', 'full_control']))
+                            <a href="{{ route('files.download', $file) }}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                        @endif
+                        @if ($permission === 'edit' || $permission === 'full_control')
+                            <a href="{{ route('files.edit', $file) }}" class="btn btn-info btn-sm text-white">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                        @endif
                         @if ($file->owner_id === Auth::id() || Auth::user()->isSuperAdmin())
                             <button class="btn btn-primary btn-sm" onclick="showShareModal()">
                                 <i class="bi bi-share"></i> Share
@@ -219,6 +226,18 @@
                                                 @if ($share->expires_at)
                                                     · Expires {{ $share->expires_at->diffForHumans() }}
                                                 @endif
+                                                @if ($share->share_reason)
+                                                    <br>
+                                                    <span class="text-info small"><i class="bi bi-info-circle"></i> {{ $share->share_reason }}</span>
+                                                @endif
+                                                @if ((Auth::user()->isSuperAdmin() || $file->owner_id === Auth::id() || (Auth::user()->isDepartmentAdmin() && Auth::user()->department_id === $file->department_id)) && isset($pendingOtps[$share->shared_with]) && $pendingOtps[$share->shared_with]->isNotEmpty())
+                                                    <div class="mt-2 text-warning bg-light p-2 rounded border border-warning-subtle d-inline-block">
+                                                        <i class="bi bi-key-fill"></i> 
+                                                        Access OTP: <strong>{{ $pendingOtps[$share->shared_with]->first()->otp_code }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">(Expires {{ $pendingOtps[$share->shared_with]->first()->expires_at->diffForHumans() }})</small>
+                                                    </div>
+                                                @endif
                                             </small>
                                         </div>
                                         @if ($file->owner_id === Auth::id())
@@ -287,6 +306,11 @@
                         <div class="mb-3">
                             <label for="expires_at" class="form-label">Expires At (Optional)</label>
                             <input type="datetime-local" name="expires_at" id="expires_at" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="share_reason" class="form-label">Reason for Sharing</label>
+                            <textarea name="share_reason" id="share_reason" class="form-control" rows="2" placeholder="e.g., Audit review, Project collaboration..." required></textarea>
+                            <small class="text-muted">This reason will be logged for security purposes.</small>
                         </div>
                     </div>
                     <div class="modal-footer">

@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Jenssegers\Agent\Agent;
 
@@ -164,6 +166,7 @@ class UserController extends Controller
             'role_id' => 'required|exists:roles,id',
             'department_id' => 'nullable|exists:departments,id',
             'phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|in:active,inactive,suspended',
         ]);
 
@@ -171,7 +174,19 @@ class UserController extends Controller
         try {
             $oldData = $user->toArray();
             
-            $user->update($request->except('password'));
+            $data = $request->except(['password', 'avatar']);
+
+            if ($request->hasFile('avatar')) {
+                // Delete old avatar
+                if ($user->avatar) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+                
+                $path = $request->file('avatar')->store('avatars', 'public');
+                $data['avatar'] = $path;
+            }
+
+            $user->update($data);
 
             $this->logActivity(
                 Auth::user(),
@@ -207,29 +222,82 @@ class UserController extends Controller
         try {
             $oldData = $user->toArray();
             
-            // Soft delete by changing status
-            $user->update(['status' => 'suspended']);
+            // REALLY delete the user
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->delete();
 
             $this->logActivity(
                 Auth::user(),
                 $request,
-                'suspend_user',
+                'delete_user',
                 'user',
-                'Suspended user: ' . $user->name,
-                $oldData,
-                null,
-                null,
-                $user->toArray()
+                'Deleted user: ' . $user->name,
+                $oldData
             );
 
             DB::commit();
 
             return redirect()->route('users.index')
-                ->with('success', 'User suspended successfully.');
+                ->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to suspend user: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to delete user. This might be due to dependencies like files or transfers. Please reassign them first.']);
         }
+    }
+
+    public function removeAvatar(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+            $user->update(['avatar' => null]);
+
+            $this->logActivity(
+                Auth::user(),
+                $request,
+                'remove_avatar',
+                'user',
+                'Removed avatar for user: ' . $user->name,
+                null,
+                null,
+                null,
+                $user->toArray()
+            );
+        }
+
+        return back()->with('success', 'User avatar removed successfully.');
+    }
+
+    public function suspend(Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        if ($user->id === Auth::id()) {
+            return back()->withErrors(['error' => 'You cannot suspend yourself.']);
+        }
+
+        if ($user->isSuperAdmin()) {
+            return back()->withErrors(['error' => 'Super Admins cannot be suspended.']);
+        }
+
+        $user->update(['status' => 'suspended']);
+
+        $this->logActivity(
+            Auth::user(),
+            $request,
+            'suspend_user',
+            'user',
+            'Suspended user: ' . $user->name,
+            null,
+            null,
+            null,
+            $user->toArray()
+        );
+
+        return back()->with('success', 'User suspended successfully.');
     }
 
     public function activate(Request $request, User $user)
@@ -259,7 +327,7 @@ class UserController extends Controller
             ->with('success', 'User activated successfully.');
     }
 
-    public function resetPassword(Request $request, User $user)
+    public function resetPassword(Request $request, User $user, \App\Services\BrevoService $brevoService)
     {
         $this->authorize('update', $user);
 
@@ -270,7 +338,15 @@ class UserController extends Controller
         ]);
 
         // Send email with new password
-        // Add email notification here
+        $brevoService->sendPasswordChangedEmail($user->email, $user->name, $newPassword);
+
+        $this->logActivity(
+            Auth::user(),
+            $request,
+            'reset_password',
+            'user',
+            'Reset password for: ' . $user->name
+        );
 
         return redirect()->route('users.show', $user)
             ->with('success', 'Password reset successfully. New password has been sent to user email.');

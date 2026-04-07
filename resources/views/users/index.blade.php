@@ -213,20 +213,24 @@
                                             </a>
                                         @endcan
                                         @can('delete', $user)
-                                            @if ($user->status === 'suspended')
-                                                <button type="button" class="btn btn-sm btn-outline-success"
-                                                    onclick="activateUser({{ $user->id }})" title="Activate">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                            @else
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                            @if ($user->status !== 'suspended')
+                                                <button type="button" class="btn btn-sm btn-outline-warning"
                                                     onclick="suspendUser({{ $user->id }})" title="Suspend">
                                                     <i class="bi bi-person-slash"></i>
                                                 </button>
+                                            @else
+                                                 <button type="button" class="btn btn-sm btn-outline-success"
+                                                    onclick="activateUser({{ $user->id }})" title="Activate">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
                                             @endif
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="deleteUser({{ $user->id }})" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         @endcan
                                         @can('update', $user)
-                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
                                                 onclick="resetPassword({{ $user->id }})" title="Reset Password">
                                                 <i class="bi bi-key"></i>
                                             </button>
@@ -267,23 +271,27 @@
     <!-- Hidden Forms -->
     <form id="activate-form" method="POST" style="display: none;">
         @csrf
-        @method('POST')
     </form>
 
     <form id="suspend-form" method="POST" style="display: none;">
+        @csrf
+    </form>
+
+    <form id="delete-form" method="POST" style="display: none;">
         @csrf
         @method('DELETE')
     </form>
 
     <form id="reset-password-form" method="POST" style="display: none;">
         @csrf
-        @method('POST')
     </form>
 @endsection
 
 @push('scripts')
     <script>
-        function activateUser(userId) {
+        const API_USER_BASE = "{{ url('users') }}";
+
+        function activateUser(id) {
             Swal.fire({
                 title: 'Activate User',
                 text: 'Are you sure you want to activate this user?',
@@ -296,45 +304,64 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('activate-form');
-                    form.action = '/users/' + userId + '/activate';
+                    form.action = `${API_USER_BASE}/${id}/activate`;
                     form.submit();
                 }
             });
         }
 
-        function suspendUser(userId) {
+        function suspendUser(id) {
             Swal.fire({
                 title: 'Suspend User',
                 text: 'Are you sure you want to suspend this user? They will not be able to login.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#f72585',
+                confirmButtonColor: '#ffc107',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Yes, suspend',
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('suspend-form');
-                    form.action = '/users/' + userId;
+                    form.action = `${API_USER_BASE}/${id}/suspend`;
                     form.submit();
                 }
             });
         }
 
-        function resetPassword(userId) {
+        function deleteUser(id) {
+            Swal.fire({
+                title: 'Delete User',
+                text: 'Are you sure you want to PERMANENTLY delete this user? This action cannot be undone.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#f72585',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('delete-form');
+                    form.action = `${API_USER_BASE}/${id}`;
+                    form.submit();
+                }
+            });
+        }
+
+        function resetPassword(id) {
             Swal.fire({
                 title: 'Reset Password',
                 text: 'Are you sure you want to reset this user\'s password? A new password will be sent to their email.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ffc107',
-                cancelButtonColor: '#6c757d',
+                confirmButtonColor: '#6c757d',
+                cancelButtonColor: '#d33',
                 confirmButtonText: 'Yes, reset',
                 cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('reset-password-form');
-                    form.action = '/users/' + userId + '/reset-password';
+                    form.action = `${API_USER_BASE}/${id}/reset-password`;
                     form.submit();
                 }
             });

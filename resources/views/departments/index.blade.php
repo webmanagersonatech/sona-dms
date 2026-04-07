@@ -206,6 +206,8 @@
 
 @push('scripts')
     <script>
+        const API_DEPT_BASE = "{{ url('departments') }}";
+
         function deleteDepartment(id) {
             Swal.fire({
                 title: 'Delete Department',
@@ -219,7 +221,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('delete-form');
-                    form.action = '/departments/' + id;
+                    form.action = `${API_DEPT_BASE}/${id}`;
                     form.submit();
                 }
             });

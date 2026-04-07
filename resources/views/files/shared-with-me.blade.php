@@ -24,7 +24,7 @@
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-xl-3 col-md-6">
-            <a href="{{ route('files.by-permission', 'view') }}" class="text-decoration-none">
+            <a href="{{ route('files.shared-with-me', ['permission' => 'view']) }}" class="text-decoration-none">
                 <div class="stat-card">
                     <div class="stat-info">
                         <h3>{{ $counts['view'] ?? 0 }}</h3>
@@ -38,7 +38,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <a href="{{ route('files.by-permission', 'download') }}" class="text-decoration-none">
+            <a href="{{ route('files.shared-with-me', ['permission' => 'download']) }}" class="text-decoration-none">
                 <div class="stat-card">
                     <div class="stat-info">
                         <h3>{{ $counts['download'] ?? 0 }}</h3>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <a href="{{ route('files.by-permission', 'edit') }}" class="text-decoration-none">
+            <a href="{{ route('files.shared-with-me', ['permission' => 'edit']) }}" class="text-decoration-none">
                 <div class="stat-card">
                     <div class="stat-info">
                         <h3>{{ $counts['edit'] ?? 0 }}</h3>
@@ -66,7 +66,7 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <a href="{{ route('files.by-permission', 'print') }}" class="text-decoration-none">
+            <a href="{{ route('files.shared-with-me', ['permission' => 'print']) }}" class="text-decoration-none">
                 <div class="stat-card">
                     <div class="stat-info">
                         <h3>{{ $counts['print'] ?? 0 }}</h3>
@@ -292,18 +292,21 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @php
+                                        $filePermission = Auth::user()->getFilePermission($share->file);
+                                    @endphp
                                     <div class="btn-group">
                                         <a href="{{ route('files.show', $share->file) }}"
                                             class="btn btn-sm btn-outline-primary" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        @if (in_array($share->permission_level, ['download', 'edit', 'full_control']))
+                                        @if (in_array($filePermission, ['download', 'edit', 'full_control']))
                                             <a href="{{ route('files.download', $share->file) }}"
                                                 class="btn btn-sm btn-outline-success" title="Download">
                                                 <i class="bi bi-download"></i>
                                             </a>
                                         @endif
-                                        @if (in_array($share->permission_level, ['edit', 'full_control']))
+                                        @if (in_array($filePermission, ['edit', 'full_control']))
                                             <a href="{{ route('files.edit', $share->file) }}"
                                                 class="btn btn-sm btn-outline-warning" title="Edit">
                                                 <i class="bi bi-pencil"></i>

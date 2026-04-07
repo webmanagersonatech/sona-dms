@@ -48,10 +48,10 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total_transfers']) }}</h3>
-                    <p>Transfers</p>
+                    <p>Physical Tracking</p>
                 </div>
                 <div class="stat-icon danger">
-                    <i class="bi bi-arrow-left-right"></i>
+                    <i class="bi bi-truck"></i>
                 </div>
                 <a href="{{ route('transfers.index') }}" class="stretched-link"></a>
             </div>
@@ -195,7 +195,7 @@
         <div class="col-xl-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Recent Transfers</h5>
+                    <h5 class="mb-0">Recent Movements</h5>
                     <a href="{{ route('transfers.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
                 <div class="card-body ">
@@ -288,7 +288,6 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Initialize Users Chart
         const ctx = document.getElementById('usersChart').getContext('2d');

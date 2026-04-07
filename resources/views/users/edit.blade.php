@@ -211,7 +211,7 @@
     </form>
 
     <!-- Remove Avatar Form -->
-    <form id="remove-avatar-form" method="POST" action="{{ route('profile.avatar.remove') }}" style="display: none;">
+    <form id="remove-avatar-form" method="POST" action="{{ route('users.avatar.remove', $user) }}" style="display: none;">
         @csrf
         @method('DELETE')
     </form>

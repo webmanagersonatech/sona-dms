@@ -1,18 +1,18 @@
 {{-- resources/views/reports/transfers.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Transfers Report')
+@section('title', 'Movement Tracking Report')
 
 @section('content')
 <!-- Header Actions -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1">Transfers Report</h4>
+        <h4 class="mb-1">Movement Tracking Report</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('reports.dashboard') }}">Reports</a></li>
-                <li class="breadcrumb-item active">Transfers Report</li>
+                <li class="breadcrumb-item active">Movement Tracking Report</li>
             </ol>
         </nav>
     </div>
@@ -44,7 +44,7 @@
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="bi bi-funnel me-2"></i> Filter Transfers Report
+            <i class="bi bi-funnel me-2"></i> Filter Movement Tracking Report
         </h5>
     </div>
     <div class="card-body">
@@ -111,7 +111,7 @@
         <div class="stat-card">
             <div class="stat-info">
                 <h3>{{ number_format($stats['total'] ?? 0) }}</h3>
-                <p>Total Transfers</p>
+                <p>Total Movements</p>
             </div>
             <div class="stat-icon primary">
                 <i class="bi bi-arrow-left-right"></i>
@@ -447,7 +447,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Status Distribution Chart
     const statusData = @json($stats['by_status'] ?? []);

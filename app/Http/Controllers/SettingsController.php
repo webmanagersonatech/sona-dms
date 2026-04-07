@@ -20,8 +20,8 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
         
-        // Decode settings if it's a string, or initialize if null
-        $settings = $this->getUserSettings($user);
+        // Use the new helper on the user model
+        $settings = $user->getSettings();
         
         $sessions = DB::table('sessions')
             ->where('user_id', $user->id)
@@ -44,8 +44,8 @@ class SettingsController extends Controller
             'notify_file_access' => 'nullable|boolean',
         ]);
 
-        // Get current settings
-        $settings = $this->getUserSettings($user);
+        // Get current settings from model
+        $settings = $user->getSettings();
         
         // Update settings
         $settings['two_factor_enabled'] = $request->boolean('two_factor_enabled', false);
@@ -56,7 +56,7 @@ class SettingsController extends Controller
         $settings['notify_file_access'] = $request->boolean('notify_file_access', true);
 
         // Save as JSON
-        $user->settings = json_encode($settings);
+        $user->settings = $settings;
         $user->save();
 
         $this->logActivity(
@@ -95,7 +95,7 @@ class SettingsController extends Controller
     public function notifications()
     {
         $user = Auth::user();
-        $settings = $this->getUserSettings($user);
+        $settings = $user->getSettings();
 
         return view('settings.notifications', compact('user', 'settings'));
     }
@@ -113,7 +113,7 @@ class SettingsController extends Controller
             'file_accessed_notification' => 'nullable|boolean',
         ]);
 
-        $settings = $this->getUserSettings($user);
+        $settings = $user->getSettings();
         
         $settings['email_notifications'] = $request->boolean('email_notifications', true);
         $settings['push_notifications'] = $request->boolean('push_notifications', false);
@@ -122,7 +122,7 @@ class SettingsController extends Controller
         $settings['transfer_delivered_notification'] = $request->boolean('transfer_delivered_notification', true);
         $settings['file_accessed_notification'] = $request->boolean('file_accessed_notification', true);
 
-        $user->settings = json_encode($settings);
+        $user->settings = $settings;
         $user->save();
 
         return redirect()->route('settings.notifications')
@@ -132,7 +132,7 @@ class SettingsController extends Controller
     public function appearance()
     {
         $user = Auth::user();
-        $settings = $this->getUserSettings($user);
+        $settings = $user->getSettings();
 
         return view('settings.appearance', compact('user', 'settings'));
     }
@@ -147,69 +147,19 @@ class SettingsController extends Controller
             'dense_mode' => 'nullable|boolean',
         ]);
 
-        $settings = $this->getUserSettings($user);
+        $settings = $user->getSettings();
         
         $settings['theme'] = $request->input('theme', 'light');
         $settings['sidebar_collapsed'] = $request->boolean('sidebar_collapsed', false);
         $settings['dense_mode'] = $request->boolean('dense_mode', false);
 
-        $user->settings = json_encode($settings);
+        $user->settings = $settings;
         $user->save();
 
         return redirect()->route('settings.appearance')
             ->with('success', 'Appearance settings updated successfully.');
     }
 
-    /**
-     * Get user settings as array
-     */
-    private function getUserSettings($user)
-    {
-        // If settings is null or empty, return default settings
-        if (empty($user->settings)) {
-            return $this->getDefaultSettings();
-        }
-        
-        // If settings is already an array (casted by Laravel), return it
-        if (is_array($user->settings)) {
-            return $user->settings;
-        }
-        
-        // If settings is a string, decode it
-        if (is_string($user->settings)) {
-            $decoded = json_decode($user->settings, true);
-            if (is_array($decoded)) {
-                return $decoded;
-            }
-        }
-        
-        // Fallback to default settings
-        return $this->getDefaultSettings();
-    }
-
-    /**
-     * Get default settings array
-     */
-    private function getDefaultSettings()
-    {
-        return [
-            'two_factor_enabled' => false,
-            'session_timeout' => 30,
-            'email_on_login' => true,
-            'email_on_device' => true,
-            'require_otp_download' => true,
-            'notify_file_access' => true,
-            'email_notifications' => true,
-            'push_notifications' => false,
-            'file_shared_notification' => true,
-            'transfer_created_notification' => true,
-            'transfer_delivered_notification' => true,
-            'file_accessed_notification' => true,
-            'theme' => 'light',
-            'sidebar_collapsed' => false,
-            'dense_mode' => false,
-        ];
-    }
 
     /**
      * Log user activity

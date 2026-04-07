@@ -11,28 +11,29 @@ class Notification extends Model
     use HasFactory;
 
     /**
-     * The "type" of the primary key ID.
+     * The primary key associated with the table.
      *
      * @var string
      */
-    protected $keyType = 'string';
+    protected $primaryKey = 'id';
 
     /**
      * Indicates if the IDs are auto-incrementing.
      *
      * @var bool
      */
-    public $incrementing = false;
+    public $incrementing = true;
 
     protected $fillable = [
-        'id',
+        'user_id',
         'type',
-        'notifiable_id',
-        'notifiable_type',
+        'message',
+        'icon',
+        'link',
         'data',
         'read_at',
-        'icon',
-        'link'
+        'notifiable_id',
+        'notifiable_type'
     ];
 
     protected $casts = [

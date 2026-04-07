@@ -127,6 +127,21 @@ class BrevoService
         return $this->sendEmail($email, $subject, $content);
     }
 
+    public function sendPasswordChangedEmail($email, $userName, $newPassword)
+    {
+        $subject = 'Your Password Has Been Reset - ' . config('app.name');
+        $content = "
+            <h2>Password Reset</h2>
+            <p>Hello <strong>{$userName}</strong>,</p>
+            <p>Your password has been reset by an administrator.</p>
+            <p>Your new temporary password is: <strong style='font-size: 20px; background: #f4f4f4; padding: 10px; border-radius: 5px; display: inline-block;'>{$newPassword}</strong></p>
+            <p>Please login and change your password immediately for security.</p>
+            <p><a href='" . url('/login') . "' style='display: inline-block; padding: 10px 20px; background: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px;'>Login Now</a></p>
+        ";
+        
+        return $this->sendEmail($email, $subject, $content);
+    }
+
     protected function sendEmail($to, $subject, $htmlContent)
     {
         // Validate sender email

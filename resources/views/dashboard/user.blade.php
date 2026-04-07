@@ -35,7 +35,7 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['my_transfers'] ?? 0) }}</h3>
-                    <p>My Transfers</p>
+                    <p>Physical Tracking</p>
                 </div>
                 <div class="stat-icon warning">
                     <i class="bi bi-truck"></i>
@@ -350,7 +350,7 @@
         <div class="col-xl-6">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">My Outgoing Transfers</h5>
+                    <h5 class="mb-0">My Outgoing Movements</h5>
                     <a href="{{ route('transfers.index') }}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-eye me-1"></i> View All
                     </a>
@@ -443,7 +443,7 @@
                                             <p class="mb-0 mt-2">No outgoing transfers</p>
                                             <a href="{{ route('transfers.create') }}"
                                                 class="btn btn-primary btn-sm mt-2">
-                                                <i class="bi bi-plus-circle"></i> Create Transfer
+                                                <i class="bi bi-plus-circle"></i> Create Movement
                                             </a>
                                         </td>
                                     </tr>
@@ -459,7 +459,7 @@
         <div class="col-xl-6">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Pending Incoming Transfers</h5>
+                    <h5 class="mb-0">My Incoming Movements</h5>
                     <a href="{{ route('transfers.index', ['status' => 'pending']) }}"
                         class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-eye me-1"></i> View All

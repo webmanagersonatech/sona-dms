@@ -46,7 +46,7 @@
             max-width: 420px;
             border-radius: 14px;
             background: #fff;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
             overflow: hidden;
         }
 
@@ -166,38 +166,53 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    {{-- ✅ SweetAlert Toast Messages --}}
+    {{-- SweetAlert Messages --}}
     <script>
-        function showToast(icon, message) {
+        @if(session('success'))
             Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: icon,
-                title: message,
+                icon: 'success',
+                title: 'Success',
+                text: "{{ session('success') }}",
+                timer: 2500,
                 showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
+                confirmButtonColor: '#4c6ef5'
             });
-        }
-
-        @if (session('success'))
-            showToast('success', "{{ session('success') }}");
         @endif
 
-        @if (session('error'))
-            showToast('error', "{{ session('error') }}");
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#4c6ef5'
+            });
         @endif
 
-        @if (session('warning'))
-            showToast('warning', "{{ session('warning') }}");
+        @if(session('warning'))
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: "{{ session('warning') }}",
+                confirmButtonColor: '#4c6ef5'
+            });
         @endif
 
-        @if (session('info'))
-            showToast('info', "{{ session('info') }}");
+        @if(session('info'))
+            Swal.fire({
+                icon: 'info',
+                title: 'Info',
+                text: "{{ session('info') }}",
+                confirmButtonColor: '#4c6ef5'
+            });
         @endif
 
         @if ($errors->any())
-            showToast('error', `{!! implode('<br>', $errors->all()) !!}`);
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                confirmButtonColor: '#4c6ef5'
+            });
         @endif
     </script>
 

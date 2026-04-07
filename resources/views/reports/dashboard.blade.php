@@ -4,61 +4,53 @@
 @section('title', 'Reports Dashboard')
 
 @section('content')
-    <div class="row">
-        <div class="col-md-3">
-            <div class="small-box bg-info">
-                <div class="inner">
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-info">
                     <h3>{{ $file_stats['total'] }}</h3>
                     <p>Total Files</p>
                 </div>
-                <div class="icon">
+                <div class="stat-icon info">
                     <i class="bi bi-files"></i>
                 </div>
-                <a href="{{ route('reports.files') }}" class="small-box-footer">
-                    View Report <i class="bi bi-arrow-right"></i>
-                </a>
+                <a href="{{ route('reports.files') }}" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="small-box bg-success">
-                <div class="inner">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-info">
                     <h3>{{ $transfer_stats['total'] }}</h3>
                     <p>Total Transfers</p>
                 </div>
-                <div class="icon">
+                <div class="stat-icon success">
                     <i class="bi bi-truck"></i>
                 </div>
-                <a href="{{ route('reports.transfers') }}" class="small-box-footer">
-                    View Report <i class="bi bi-arrow-right"></i>
-                </a>
+                <a href="{{ route('reports.transfers') }}" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="small-box bg-warning">
-                <div class="inner">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-info">
                     <h3>{{ $user_stats['total'] ?? 0 }}</h3>
                     <p>Total Users</p>
                 </div>
-                <div class="icon">
+                <div class="stat-icon warning">
                     <i class="bi bi-people"></i>
                 </div>
-                <a href="{{ route('reports.users') }}" class="small-box-footer">
-                    View Report <i class="bi bi-arrow-right"></i>
-                </a>
+                <a href="{{ route('reports.users') }}" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="small-box bg-danger">
-                <div class="inner">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-info">
                     <h3>{{ $activity_stats['today'] }}</h3>
                     <p>Today's Activities</p>
                 </div>
-                <div class="icon">
+                <div class="stat-icon danger">
                     <i class="bi bi-activity"></i>
                 </div>
-                <a href="{{ route('reports.activities') }}" class="small-box-footer">
-                    View Report <i class="bi bi-arrow-right"></i>
-                </a>
+                <a href="{{ route('reports.activities') }}" class="stretched-link"></a>
             </div>
         </div>
     </div>

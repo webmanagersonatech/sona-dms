@@ -174,5 +174,74 @@ class User extends Authenticatable
             ->wherePivot('expires_at', '<=', now());
     }
 
-    
+    /**
+     * Get user's permission level for a file
+     * 
+     * @param File $file
+     * @return string
+     */
+    /**
+     * Get user settings as array with defaults
+     * 
+     * @return array
+     */
+    public function getSettings()
+    {
+        $defaults = [
+            'two_factor_enabled' => false,
+            'session_timeout' => 30,
+            'email_on_login' => true,
+            'email_on_device' => true,
+            'require_otp_download' => true,
+            'notify_file_access' => true,
+            'email_notifications' => true,
+            'push_notifications' => false,
+            'file_shared_notification' => true,
+            'transfer_created_notification' => true,
+            'transfer_delivered_notification' => true,
+            'file_accessed_notification' => true,
+            'theme' => 'light',
+            'sidebar_collapsed' => false,
+            'dense_mode' => false,
+        ];
+
+        $settings = $this->settings;
+        if (is_string($settings)) {
+            $settings = json_decode($settings, true) ?? [];
+        }
+
+        return array_merge($defaults, $settings ?? []);
+    }
+
+    public function getFilePermission(File $file)
+    {
+        // Owner and Super Admin have full control
+        if ($this->isSuperAdmin() || $this->id === $file->owner_id) {
+            return 'full_control';
+        }
+
+        // Check specific share permissions (most granular)
+        // If file->relation is loaded, use it to avoid extra queries
+        $share = $file->relationLoaded('shares') 
+            ? $file->shares->where('shared_with', $this->id)->where('status', 'active')->first()
+            : FileShare::where('file_id', $file->id)
+                ->where('shared_with', $this->id)
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+                })
+                ->first();
+
+        if ($share) {
+            return $share->permission_level;
+        }
+
+        // Department admin can view all files in their department
+        if ($this->isDepartmentAdmin() && $this->department_id === $file->department_id) {
+            return 'view';
+        }
+
+        return 'none';
+    }
 }

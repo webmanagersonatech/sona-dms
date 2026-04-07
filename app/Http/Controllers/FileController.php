@@ -32,8 +32,8 @@ class FileController extends Controller
     {
         $user = Auth::user();
         
-        $query = File::with(['owner', 'department', 'shares' => function($q) use ($user) {
-            $q->where('shared_with', $user->id);
+        $query = File::with(['owner', 'department', 'shares' => function($q) {
+            $q->where('status', 'active')->with('sharedBy', 'sharedWith');
         }]);
 
         // Handle filter from tabs
@@ -176,16 +176,24 @@ class FileController extends Controller
 
     public function create()
     {
-        return view('files.create');
+        $user = Auth::user();
+        $departments = $user->isSuperAdmin() ? Department::where('status', 'active')->get() : collect();
+        return view('files.create', compact('departments'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'file' => 'required|file|max:102400', // 100MB max
             'description' => 'nullable|string|max:500',
             'encrypt' => 'boolean',
-        ]);
+        ];
+
+        if (Auth::user()->isSuperAdmin()) {
+            $rules['department_id'] = 'required|exists:departments,id';
+        }
+
+        $request->validate($rules);
 
         $user = Auth::user();
         $uploadedFile = $request->file('file');
@@ -209,7 +217,7 @@ class FileController extends Controller
                 'extension' => $extension,
                 'description' => $request->description,
                 'owner_id' => $user->id,
-                'department_id' => $user->department_id,
+                'department_id' => $user->isSuperAdmin() ? $request->department_id : $user->department_id,
                 'is_encrypted' => $request->boolean('encrypt', false),
                 'status' => 'active',
             ];
@@ -353,14 +361,23 @@ class FileController extends Controller
     public function show(File $file)
     {
         $user = Auth::user();
+        $permission = $this->getUserPermission($file, $user);
 
-        if (!$user->canAccessFile($file)) {
+        if ($permission === 'none') {
             abort(403, 'You do not have access to this file.');
         }
 
-        // Get user's permission level
-        $permission = $this->getUserPermission($file, $user);
+        // Require OTP for shared access (not for owner or super admin)
+        if ($user->id !== $file->owner_id && !$user->isSuperAdmin()) {
+            if (!session('file_otp_verified_' . $file->id)) {
+                return redirect()->route('files.access.verify', $file->uuid);
+            }
+        }
 
+        $file->load(['owner', 'department', 'shares' => function($q) {
+            $q->where('status', 'active')->with('sharedBy');
+        }, 'shares.sharedWith']);
+        
         $file->increment('view_count');
         $file->update(['last_accessed_at' => now()]);
 
@@ -374,35 +391,35 @@ class FileController extends Controller
             $file->id
         );
 
-        $file->load(['owner', 'department', 'shares' => function($q) {
-            $q->where('status', 'active');
-        }, 'shares.sharedBy', 'shares.sharedWith']);
-        
         $activityLogs = ActivityLog::where('file_id', $file->id)
             ->with('user')
             ->latest()
             ->take(20)
             ->get();
 
-        return view('files.show', compact('file', 'activityLogs', 'permission'));
+        $pendingOtps = OtpLog::where('file_id', $file->id)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->get()
+            ->groupBy('target_user_id');
+
+        return view('files.show', compact('file', 'activityLogs', 'permission', 'pendingOtps'));
     }
 
     public function download(Request $request, File $file)
     {
         $user = Auth::user();
-
-        if (!$user->canAccessFile($file)) {
-            // Check if OTP verification is needed for external access
-            if ($file->owner_id !== $user->id) {
-                return $this->requestOtpForDownload($file);
-            }
-            abort(403, 'You do not have access to this file.');
-        }
-
-        // Check if user has download permission
         $permission = $this->getUserPermission($file, $user);
+
         if (!in_array($permission, ['download', 'edit', 'full_control']) && $user->id !== $file->owner_id && !$user->isSuperAdmin()) {
             abort(403, 'You do not have permission to download this file.');
+        }
+
+        // Require OTP for shared access (not for owner or super admin)
+        if ($user->id !== $file->owner_id && !$user->isSuperAdmin()) {
+            if (!session('file_otp_verified_' . $file->id)) {
+                return redirect()->route('files.access.verify', $file->uuid);
+            }
         }
 
         $file->increment('download_count');
@@ -453,9 +470,6 @@ class FileController extends Controller
         }
     }
 
-    /**
-     * Get user's permission level for a file
-     */
     private function getUserPermission(File $file, User $user)
     {
         // Owner and Super Admin have full control
@@ -463,12 +477,7 @@ class FileController extends Controller
             return 'full_control';
         }
 
-        // Department admin can view files in their department
-        if ($user->isDepartmentAdmin() && $user->department_id === $file->department_id) {
-            return 'view';
-        }
-
-        // Check share permissions
+        // Check specific share permissions first (most granular)
         $share = FileShare::where('file_id', $file->id)
             ->where('shared_with', $user->id)
             ->where('status', 'active')
@@ -478,7 +487,16 @@ class FileController extends Controller
             })
             ->first();
 
-        return $share ? $share->permission_level : 'none';
+        if ($share) {
+            return $share->permission_level;
+        }
+
+        // Department admin can view all files in their department by default
+        if ($user->isDepartmentAdmin() && $user->department_id === $file->department_id) {
+            return 'view';
+        }
+
+        return 'none';
     }
 
     /**
@@ -488,15 +506,29 @@ class FileController extends Controller
     {
         $user = Auth::user();
         
-        $shares = FileShare::with(['file', 'sharedBy', 'file.owner', 'file.department'])
+        $query = FileShare::with(['file', 'sharedBy', 'file.owner', 'file.department'])
             ->where('shared_with', $user->id)
             ->where('status', 'active')
             ->where(function($q) {
                 $q->whereNull('expires_at')
                   ->orWhere('expires_at', '>', now());
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            });
+
+        // Apply permission filter
+        if ($request->filled('permission')) {
+            $query->where('permission_level', $request->permission);
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->whereHas('file', function($q) use ($searchTerm) {
+                $q->where('name', 'like', $searchTerm)
+                  ->orWhere('original_name', 'like', $searchTerm);
+            });
+        }
+        
+        $shares = $query->orderBy('created_at', 'desc')->paginate(15);
         
         // Get counts by permission
         $counts = [
@@ -735,12 +767,18 @@ class FileController extends Controller
             'user_id' => 'required|exists:users,id',
             'permission_level' => 'required|in:view,download,edit,print,full_control',
             'expires_at' => 'nullable|date|after:now',
+            'share_reason' => 'required|string|max:500',
         ]);
 
         $user = Auth::user();
 
-        if ($file->owner_id !== $user->id && !$user->isSuperAdmin()) {
-            abort(403, 'You can only share your own files.');
+        // Super Admin can share anything, Dept Admin can share files from their department, owner can share their files
+        $canShare = $user->isSuperAdmin() || 
+                    ($user->isDepartmentAdmin() && $user->department_id === $file->department_id) || 
+                    ($file->owner_id === $user->id);
+
+        if (!$canShare) {
+            abort(403, 'You do not have permission to share this file.');
         }
 
         // Check if share already exists
@@ -760,26 +798,45 @@ class FileController extends Controller
                 'shared_by' => $user->id,
                 'shared_with' => $request->user_id,
                 'permission_level' => $request->permission_level,
-                'expires_at' => $request->expires_at,
+                'expires_at' => $request->expires_at ? \Carbon\Carbon::parse($request->expires_at) : null,
+                'share_reason' => $request->share_reason,
                 'status' => 'active',
-                'access_token' => Str::random(64),
+                'access_token' => \Illuminate\Support\Str::random(64),
             ]);
 
-            // Send notification email
-            $this->brevoService->sendFileSharedEmail(
-                $share->sharedWith->email,
-                $user->name,
-                $file->name,
-                $share->permission_level,
-                $share->expires_at
-            );
+            $recipient = User::find($request->user_id);
+            if ($recipient) {
+                // Send notification email
+                $this->brevoService->sendFileSharedEmail(
+                    $recipient->email,
+                    $user->name,
+                    $file->name,
+                    $share->permission_level,
+                    $share->expires_at
+                );
+                // Create local notification
+                \App\Models\Notification::create([
+                    'user_id' => $recipient->id,
+                    'type' => 'info',
+                    'icon' => 'bi-share',
+                    'message' => 'User ' . $user->name . ' shared a file with you: ' . $file->name,
+                    'link' => route('files.show', $file),
+                    'notifiable_id' => $recipient->id,
+                    'notifiable_type' => 'App\Models\User',
+                    'data' => [
+                        'file_id' => $file->id,
+                        'shared_by' => $user->id,
+                        'permission' => $share->permission_level
+                    ]
+                ]);
+            }
 
             $this->logActivity(
                 $user,
                 $request,
                 'share',
                 'file',
-                'Shared file with ' . $share->sharedWith->name,
+                'Shared file with ' . ($recipient->name ?? 'User'),
                 null,
                 $file->id,
                 null,
@@ -791,6 +848,7 @@ class FileController extends Controller
             return redirect()->back()->with('success', 'File shared successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Share error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to share file: ' . $e->getMessage()]);
         }
     }
@@ -910,9 +968,23 @@ class FileController extends Controller
     public function verifyAccess(Request $request, $uuid)
     {
         $file = File::where('uuid', $uuid)->firstOrFail();
+        $user = Auth::user();
         
-        if (!session('pending_file_download')) {
+        // If already verified or user is exempt, redirect to show
+        if (session('file_otp_verified_' . $file->id) || $user->id === $file->owner_id || $user->isSuperAdmin()) {
             return redirect()->route('files.show', $file);
+        }
+
+        // Check if an OTP is already pending, if not, generate and send one
+        $pendingOtp = OtpLog::where('file_id', $file->id)
+            ->where('target_user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$pendingOtp) {
+            // This implicitly calls sendEmail in most implementations, but we must ensure it's called
+            $this->requestOtpForDownload($file);
         }
 
         return view('files.verify-access', compact('file'));
@@ -922,6 +994,7 @@ class FileController extends Controller
     {
         $request->validate([
             'otp' => 'required|string|size:6',
+            'access_reason' => 'required|string|max:500',
         ]);
 
         $file = File::where('uuid', $uuid)->firstOrFail();
@@ -949,6 +1022,7 @@ class FileController extends Controller
             'status' => 'verified',
         ]);
 
+        session(["file_otp_verified_{$file->id}" => true]);
         session()->forget('pending_file_download');
 
         $this->logActivity(
@@ -956,12 +1030,81 @@ class FileController extends Controller
             $request,
             'otp_verified',
             'file',
-            'OTP verified for file access',
+            'OTP verified for file access. Reason: ' . $request->access_reason,
             null,
             $file->id
         );
 
-        return redirect()->route('files.download', $file->uuid);
+        $redirectTo = session()->pull('otp_redirect_to', 'download');
+        
+        if ($redirectTo === 'show') {
+            return redirect()->route('files.show', $file);
+        }
+
+        return redirect()->route('files.download', $file);
+    }
+
+    public function edit(File $file)
+    {
+        $user = Auth::user();
+        $permission = $this->getUserPermission($file, $user);
+
+        if (!in_array($permission, ['edit', 'full_control'])) {
+            abort(403, 'You do not have permission to edit this file.');
+        }
+
+        $departments = $user->isSuperAdmin() ? Department::where('status', 'active')->get() : collect();
+        
+        return view('files.edit', compact('file', 'departments'));
+    }
+
+    public function update(Request $request, File $file)
+    {
+        $user = Auth::user();
+        $permission = $this->getUserPermission($file, $user);
+
+        if (!in_array($permission, ['edit', 'full_control'])) {
+            abort(403, 'You do not have permission to edit this file.');
+        }
+
+        $rules = [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ];
+
+        if ($user->isSuperAdmin()) {
+            $rules['department_id'] = 'required|exists:departments,id';
+        }
+
+        $request->validate($rules);
+
+        $oldData = $file->toArray();
+        
+        $updateData = [
+            'name' => $request->name,
+            'description' => $request->description,
+        ];
+
+        if ($user->isSuperAdmin()) {
+            $updateData['department_id'] = $request->department_id;
+        }
+
+        $file->update($updateData);
+
+        $this->logActivity(
+            $user,
+            $request,
+            'update',
+            'file',
+            'Updated file: ' . $file->name,
+            $oldData,
+            $file->id,
+            null,
+            $file->toArray()
+        );
+
+        return redirect()->route('files.show', $file)
+            ->with('success', 'File updated successfully.');
     }
 
     private function requestOtpForDownload(File $file)
@@ -988,6 +1131,21 @@ class FileController extends Controller
             $file->name,
             Auth::user()->name
         );
+
+        // Create local notification for owner
+        \App\Models\Notification::create([
+            'user_id' => $file->owner_id,
+            'type' => 'warning',
+            'icon' => 'bi-shield-lock',
+            'message' => 'User ' . Auth::user()->name . ' requested access to ' . $file->name,
+            'link' => route('files.show', $file),
+            'notifiable_id' => $file->owner_id,
+            'notifiable_type' => 'App\Models\User',
+            'data' => [
+                'file_id' => $file->id,
+                'requester_id' => Auth::id()
+            ]
+        ]);
 
         return redirect()->route('files.access.verify', $file->uuid)
             ->with('info', 'OTP has been sent to the file owner for approval.');

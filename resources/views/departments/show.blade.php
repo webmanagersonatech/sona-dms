@@ -18,6 +18,9 @@
         </div>
         <div class="d-flex gap-2">
             @can('update', $department)
+                <a href="{{ route('departments.settings', $department) }}" class="btn btn-primary">
+                    <i class="bi bi-gear me-2"></i>Settings
+                </a>
                 <a href="{{ route('departments.edit', $department) }}" class="btn btn-info">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </a>

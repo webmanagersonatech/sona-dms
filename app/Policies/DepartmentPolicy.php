@@ -47,7 +47,8 @@ class DepartmentPolicy
 
     public function update(User $user, Department $department)
     {
-        return false; // Only super admin can update, handled by before()
+        // Dept admin can only update their own department info/settings
+        return $user->role && $user->role->slug === 'department-admin' && $user->department_id === $department->id;
     }
 
     public function delete(User $user, Department $department)

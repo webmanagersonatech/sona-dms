@@ -1,17 +1,17 @@
 {{-- resources/views/transfers/index.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Transfers')
+@section('title', 'Physical Tracking')
 
 @section('content')
     <!-- Header Actions -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="mb-1">Transfer Management</h4>
+            <h4 class="mb-1">Movement Tracking</h4>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Transfers</li>
+                    <li class="breadcrumb-item active">Physical Tracking</li>
                 </ol>
             </nav>
         </div>
@@ -26,7 +26,7 @@
             <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total'] ?? 0) }}</h3>
-                    <p>Total Transfers</p>
+                    <p>Total Movements</p>
                 </div>
                 <div class="stat-icon primary">
                     <i class="bi bi-arrow-left-right"></i>
@@ -122,14 +122,14 @@
                     All Transfers
                 @endif
             </h5>
-            <div class="btn-group">
+            <!-- <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print()">
                     <i class="bi bi-printer"></i> Print
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-success" onclick="exportTable()">
                     <i class="bi bi-download"></i> Export
                 </button>
-            </div>
+            </div> -->
         </div>
         <div class="card-body">
             <!-- Filters -->

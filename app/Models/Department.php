@@ -9,11 +9,32 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'status', 'description'];
+    protected $fillable = ['name', 'code', 'status', 'description', 'settings'];
 
     protected $casts = [
-        'status' => 'string'
+        'status' => 'string',
+        'settings' => 'array',
     ];
+
+    /**
+     * Get department settings with defaults
+     */
+    public function getSettings()
+    {
+        $defaults = [
+            'max_storage_gb' => 10,
+            'allow_external_sharing' => true,
+            'require_otp_for_all' => false,
+            'auto_purge_days' => 0, // 0 means disabled
+        ];
+
+        $settings = $this->settings;
+        if (is_string($settings)) {
+            $settings = json_decode($settings, true) ?? [];
+        }
+
+        return array_merge($defaults, $settings ?? []);
+    }
 
     public function users()
     {

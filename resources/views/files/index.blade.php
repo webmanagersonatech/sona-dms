@@ -19,97 +19,90 @@
         </a>
     </div>
 
-    {{-- ================= STATS CARDS ================= --}}
+    <!-- Stats Cards -->
     <div class="row g-4 mb-4">
-
-        {{-- Total Files --}}
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card primary">
+            <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total_files'] ?? $files->total()) }}</h3>
                     <p>Total Files</p>
                 </div>
-                <div class="stat-icon">
+                <div class="stat-icon primary">
                     <i class="bi bi-files"></i>
                 </div>
             </div>
         </div>
 
-        {{-- Shared With Me --}}
         <div class="col-xl-3 col-md-6">
-            <a href="{{ route('files.shared-with-me') }}" class="text-decoration-none">
-                <div class="stat-card success">
-                    <div class="stat-info">
-                        <h3>{{ number_format($stats['shared_with_me'] ?? 0) }}</h3>
-                        <p>Shared With Me</p>
-                    </div>
-                    <div class="stat-icon">
-                        <i class="bi bi-share"></i>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>{{ number_format($stats['shared_with_me'] ?? 0) }}</h3>
+                    <p>Shared With Me</p>
                 </div>
-            </a>
+                <div class="stat-icon success">
+                    <i class="bi bi-share"></i>
+                </div>
+                <a href="{{ route('files.shared-with-me') }}" class="stretched-link"></a>
+            </div>
         </div>
 
-        {{-- Downloads --}}
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card info">
+            <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total_downloads'] ?? $files->sum('download_count')) }}</h3>
                     <p>Total Downloads</p>
                 </div>
-                <div class="stat-icon">
+                <div class="stat-icon info">
                     <i class="bi bi-download"></i>
                 </div>
             </div>
         </div>
 
-        {{-- Views --}}
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card warning">
+            <div class="stat-card">
                 <div class="stat-info">
                     <h3>{{ number_format($stats['total_views'] ?? $files->sum('view_count')) }}</h3>
                     <p>Total Views</p>
                 </div>
-                <div class="stat-icon">
+                <div class="stat-icon warning">
                     <i class="bi bi-eye"></i>
                 </div>
             </div>
         </div>
-
     </div>
 
-    {{-- ================= FILTER TABS ================= --}}
-    @php
-        $route = Route::currentRouteName();
-    @endphp
-
+    <!-- Filter Tabs -->
     <div class="card mb-4">
-        <div class="card-body pb-0">
-            <ul class="nav nav-tabs">
-
+        <div class="card-body">
+            <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link {{ $route == 'files.index' ? 'active' : '' }}" href="{{ route('files.index') }}">
-                        All Files
+                    @php
+                        $allFilesParams = request()->except(['filter', 'page']);
+                    @endphp
+                    <a class="nav-link {{ Route::currentRouteName() === 'files.index' && !request()->has('filter') ? 'active' : '' }}"
+                        href="{{ route('files.index', $allFilesParams) }}">
+                        <i class="bi bi-files me-1"></i> All Files
                     </a>
                 </li>
-
                 <li class="nav-item">
-                    <a class="nav-link {{ $route == 'files.my-files' ? 'active' : '' }}"
-                        href="{{ route('files.my-files') }}">
-                        My Files
+                    <a class="nav-link {{ Route::currentRouteName() === 'files.my-files' ? 'active' : '' }}"
+                        href="{{ route('files.my-files', request()->except(['filter', 'page'])) }}">
+                        <i class="bi bi-person me-1"></i> My Files
                     </a>
                 </li>
-
                 <li class="nav-item">
-                    <a class="nav-link {{ $route == 'files.shared-with-me' ? 'active' : '' }}"
-                        href="{{ route('files.shared-with-me') }}">
-                        Shared With Me
+                    <a class="nav-link {{ Route::currentRouteName() === 'files.shared-with-me' ? 'active' : '' }}"
+                        href="{{ route('files.shared-with-me', request()->except(['filter', 'page'])) }}">
+                        <i class="bi bi-share me-1"></i> Shared With Me
+                        @if (($stats['shared_with_me'] ?? 0) > 0)
+                            <span class="badge bg-primary ms-1">{{ $stats['shared_with_me'] }}</span>
+                        @endif
                     </a>
                 </li>
-
             </ul>
         </div>
     </div>
+
     <!-- Files Table Card -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -222,13 +215,9 @@
                     <tbody>
                         @forelse($files as $file)
                             @php
-                                $share = $file->shares->where('shared_with', Auth::id())->first();
                                 $isOwner = $file->owner_id === Auth::id();
-                                $filePermission = $isOwner
-                                    ? 'full_control'
-                                    : ($share
-                                        ? $share->permission_level
-                                        : 'none');
+                                $share = $file->shares->where('shared_with', Auth::id())->where('status', 'active')->first();
+                                $filePermission = Auth::user()->getFilePermission($file);
 
                                 $permissionColors = [
                                     'view' => 'info',
@@ -345,12 +334,12 @@
                                             </a>
                                         @endif
 
-                                        {{-- @if ($filePermission === 'edit' || $isOwner)
+                                        @if ($filePermission === 'edit' || $isOwner)
                                             <a href="{{ route('files.edit', $file) }}" class="btn btn-outline-info"
                                                 title="Edit" data-bs-toggle="tooltip">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                        @endif --}}
+                                        @endif
 
                                         @if ($isOwner)
                                             @if ($file->status === 'active')
@@ -365,10 +354,10 @@
                                                 </button>
                                             @endif
 
-                                            {{-- <button type="button" class="btn btn-outline-danger" title="Delete"
+                                            <button type="button" class="btn btn-outline-danger" title="Delete"
                                                 data-bs-toggle="tooltip" onclick="deleteFile({{ $file->id }})">
                                                 <i class="bi bi-trash"></i>
-                                            </button> --}}
+                                            </button>
                                         @endif
                                     </div>
                                 </td>
@@ -415,62 +404,6 @@
 
 @push('styles')
     <style>
-        .stat-card {
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-card .stat-info {
-            position: relative;
-            z-index: 1;
-        }
-
-        .stat-card .stat-info h3 {
-            font-size: 2rem;
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-        }
-
-        .stat-card .stat-info p {
-            margin-bottom: 0;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .stat-card .stat-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 3rem;
-            opacity: 0.2;
-        }
-
-        .stat-card.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .stat-card.success {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-
-        .stat-card.info {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .stat-card.warning {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
         .table td {
             vertical-align: middle;
         }

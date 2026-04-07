@@ -303,6 +303,69 @@ class DepartmentController extends Controller
     }
 
     /**
+     * Display department settings.
+     */
+    public function settings(Department $department)
+    {
+        if (!Auth::user()->can('update', $department)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $settings = $department->getSettings();
+        return view('departments.settings', compact('department', 'settings'));
+    }
+
+    /**
+     * Update department settings.
+     */
+    public function updateSettings(Request $request, Department $department)
+    {
+        if (!Auth::user()->can('update', $department)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'max_storage_gb' => 'required|integer|min:1|max:1000',
+            'allow_external_sharing' => 'boolean',
+            'require_otp_for_all' => 'boolean',
+            'auto_purge_days' => 'required|integer|min:0',
+        ]);
+
+        $settings = [
+            'max_storage_gb' => (int) $request->max_storage_gb,
+            'allow_external_sharing' => $request->boolean('allow_external_sharing'),
+            'require_otp_for_all' => $request->boolean('require_otp_for_all'),
+            'auto_purge_days' => (int) $request->auto_purge_days,
+        ];
+
+        DB::beginTransaction();
+        try {
+            $oldData = $department->toArray();
+            $department->update(['settings' => $settings]);
+
+            $this->logActivity(
+                Auth::user(),
+                $request,
+                'update_settings',
+                'department',
+                'Updated settings for department: ' . $department->name,
+                $oldData,
+                null,
+                null,
+                $department->toArray()
+            );
+
+            DB::commit();
+
+            return redirect()->route('departments.settings', $department)
+                ->with('success', 'Department settings updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to update settings: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Remove the specified department.
      */
     public function destroy(Request $request, Department $department)
@@ -313,6 +376,10 @@ class DepartmentController extends Controller
 
         if ($department->users()->count() > 0) {
             return back()->withErrors(['error' => 'Cannot delete department with assigned users.']);
+        }
+
+        if ($department->files()->count() > 0) {
+            return back()->withErrors(['error' => 'Cannot delete department with associated files.']);
         }
 
         DB::beginTransaction();

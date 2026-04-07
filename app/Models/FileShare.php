@@ -17,7 +17,9 @@ class FileShare extends Model
         'permission_level', 
         'expires_at', 
         'status', 
-        'access_token'
+        'access_token',
+        'share_reason',
+        'access_otp'
     ];
 
     protected $casts = [

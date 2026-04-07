@@ -42,31 +42,56 @@
 
 @push('scripts')
 <script>
-const inputs = document.querySelectorAll('.otp-input');
-const hidden = document.getElementById('otp_hidden');
+    const inputs = document.querySelectorAll('.otp-input');
+    const hidden = document.getElementById('otp_hidden');
 
-inputs.forEach((input,i)=>{
-    input.addEventListener('input',()=>{
-        if(input.value && i<5) inputs[i+1].focus();
-        update();
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            if (e.inputType === 'deleteContentBackward') return;
+            if (input.value && index < inputs.length - 1) inputs[index + 1].focus();
+            update();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && index > 0) inputs[index - 1].focus();
+        });
+
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').slice(0, inputs.length);
+            if (!/^\d+$/.test(pasteData)) return;
+            pasteData.split('').forEach((char, i) => { if (inputs[i]) inputs[i].value = char; });
+            update();
+            inputs[Math.min(pasteData.length, inputs.length - 1)].focus();
+        });
     });
-});
 
-function update(){
-    let val='';
-    inputs.forEach(i=>val+=i.value);
-    hidden.value = val;
-}
+    function update() {
+        let val = '';
+        inputs.forEach(i => val += i.value);
+        hidden.value = val;
+    }
 
-// password match
-document.getElementById('confirm').addEventListener('input',function(){
-    let p = document.getElementById('password').value;
-    let c = this.value;
-    let msg = document.getElementById('match');
+    // password match logic
+    const password = document.getElementById('password');
+    const confirm = document.getElementById('confirm');
+    const matchMsg = document.getElementById('match');
 
-    msg.innerHTML = (p===c)
-        ? '<span class="text-success">Match</span>'
-        : '<span class="text-danger">Not Match</span>';
-});
+    confirm.addEventListener('input', () => {
+        if (confirm.value === '') {
+            matchMsg.innerHTML = '';
+            return;
+        }
+        if (password.value === confirm.value) {
+            matchMsg.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Passwords Match</span>';
+            confirm.style.borderColor = "#10b981";
+        } else {
+            matchMsg.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-x-circle-fill"></i> Passwords Do Not Match</span>';
+            confirm.style.borderColor = "#ef4444";
+        }
+    });
+
+    // Initial focus
+    inputs[0].focus();
 </script>
 @endpush

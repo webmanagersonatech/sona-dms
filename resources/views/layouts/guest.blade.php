@@ -20,121 +20,185 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-
-            background: url('{{ asset('assets/images/background.webp') }}') no-repeat center center;
+            background: url('{{ asset('assets/images/background.webp') }}') no-repeat center center fixed;
             background-size: cover;
             position: relative;
+            overflow: hidden;
+            margin: 0;
         }
 
+        /* Overlay for opacity effect on background */
         body::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6); /* Adjust opacity here */
+            backdrop-filter: blur(5px);
+            z-index: 1;
         }
 
         .auth-card {
             position: relative;
             z-index: 2;
             width: 100%;
-            max-width: 420px;
-            border-radius: 14px;
-            background: #fff;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            max-width: 440px;
+            border-radius: 28px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.3);
             overflow: hidden;
+            animation: cardEntrance 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .auth-header {
             text-align: center;
-            padding: 25px;
-            border-bottom: 1px solid #eee;
+            padding: 45px 30px 25px;
         }
 
         .logo {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));
         }
 
         .auth-header h5 {
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.7px;
+            margin-bottom: 8px;
         }
 
         .auth-header small {
-            color: #6c757d;
+            color: #6b7280;
+            font-size: 1rem;
+            font-weight: 500;
         }
 
         .auth-body {
-            padding: 30px;
+            padding: 0 45px 45px;
         }
 
         .form-label {
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .form-control {
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            border: 2px solid #f3f4f6;
+            background: #f9fafb;
+            transition: all 0.25s ease;
+        }
+
+        .form-control:focus {
+            background: #fff;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
         }
 
         .input-group-text {
-            background: #f1f3f5;
+            background: #f9fafb;
+            border: 2px solid #f3f4f6;
+            border-radius: 14px;
+            color: #9ca3af;
+            padding: 0 18px;
         }
 
         .btn-auth {
-            background: #4c6ef5;
+            background: var(--primary-gradient);
+            color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px;
-            font-weight: 500;
+            border-radius: 14px;
+            padding: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4);
+            margin-top: 10px;
         }
 
         .btn-auth:hover {
-            background: #364fc7;
+            transform: translateY(-3px);
+            box-shadow: 0 20px 30px -8px rgba(102, 126, 234, 0.5);
+            color: white;
         }
 
         .otp-input {
-            width: 45px;
-            height: 55px;
+            width: 52px;
+            height: 64px;
             text-align: center;
-            font-size: 20px;
-            font-weight: 600;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
+            font-size: 1.7rem;
+            font-weight: 800;
+            border-radius: 14px;
+            border: 2px solid #f3f4f6;
+            background: #f9fafb;
+            transition: all 0.2s;
+            margin: 0 5px;
         }
 
         .otp-input:focus {
-            border-color: #4c6ef5;
+            background: #fff;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
             outline: none;
         }
 
         .link {
-            font-size: 0.85rem;
+            font-size: 0.95rem;
+            color: #4f46e5;
+            font-weight: 600;
             text-decoration: none;
         }
 
         .link:hover {
+            color: #3730a3;
             text-decoration: underline;
         }
 
         .timer {
-            font-weight: 600;
-            color: #4c6ef5;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ef4444;
+            background: #fee2e2;
+            padding: 10px 24px;
+            border-radius: 100px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
         }
 
-        @media (max-width: 768px) {
-            .auth-body {
-                padding: 25px;
+        @media (max-width: 576px) {
+            .auth-card {
+                max-width: 92%;
             }
+            .auth-header { padding: 35px 25px 15px; }
+            .auth-body { padding: 0 30px 35px; }
+            .otp-input { width: 45px; height: 58px; font-size: 1.4rem; margin: 0 2px; }
         }
     </style>
 
@@ -168,50 +232,53 @@
 
     {{-- SweetAlert Messages --}}
     <script>
+        const commonToast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
         @if(session('success'))
-            Swal.fire({
+            commonToast.fire({
                 icon: 'success',
-                title: 'Success',
-                text: "{{ session('success') }}",
-                timer: 2500,
-                showConfirmButton: false,
-                confirmButtonColor: '#4c6ef5'
+                title: "{{ session('success') }}"
             });
         @endif
 
         @if(session('error'))
-            Swal.fire({
+            commonToast.fire({
                 icon: 'error',
-                title: 'Error',
-                text: "{{ session('error') }}",
-                confirmButtonColor: '#4c6ef5'
+                title: "{{ session('error') }}",
+                timer: 4000
             });
         @endif
 
         @if(session('warning'))
-            Swal.fire({
+            commonToast.fire({
                 icon: 'warning',
-                title: 'Warning',
-                text: "{{ session('warning') }}",
-                confirmButtonColor: '#4c6ef5'
+                title: "{{ session('warning') }}"
             });
         @endif
 
         @if(session('info'))
-            Swal.fire({
+            commonToast.fire({
                 icon: 'info',
-                title: 'Info',
-                text: "{{ session('info') }}",
-                confirmButtonColor: '#4c6ef5'
+                title: "{{ session('info') }}"
             });
         @endif
 
         @if ($errors->any())
-            Swal.fire({
+            commonToast.fire({
                 icon: 'error',
                 title: 'Validation Error',
-                html: `{!! implode('<br>', $errors->all()) !!}`,
-                confirmButtonColor: '#4c6ef5'
+                html: `<div class="text-start small">{!! implode('<br>', $errors->all()) !!}</div>`,
+                timer: 6000
             });
         @endif
     </script>

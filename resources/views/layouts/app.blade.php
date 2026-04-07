@@ -158,7 +158,7 @@
                         <div class="menu-item">
                             <a href="{{ route('departments.index') }}"
                                 class="menu-link {{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                                <i class="bi bi-building"></i>
+                            <i class="bi bi-building"></i>
                                 <span>Departments</span>
                             </a>
                         </div>
@@ -424,33 +424,41 @@
     <!-- Your JS -->
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
-    <!-- SESSION TOAST ALERT (TOP RIGHT) -->
-    @if(session('success'))
     <script>
-        Swal.fire({
+        const commonToast = Swal.mixin({
             toast: true,
             position: 'top-end',
-            icon: 'success',
-            title: "{{ session('success') }}",
             showConfirmButton: false,
             timer: 3000,
-            timerProgressBar: true
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
         });
-    </script>
-    @endif
 
-    @if(session('error'))
-    <script>
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'error',
-            title: "{{ session('error') }}",
-            showConfirmButton: false,
-            timer: 3000
-        });
+        @if(session('success'))
+            commonToast.fire({
+                icon: 'success',
+                title: "{{ session('success') }}"
+            });
+        @endif
+
+        @if(session('error'))
+            commonToast.fire({
+                icon: 'error',
+                title: "{{ session('error') }}",
+                timer: 4000
+            });
+        @endif
+
+        @if(session('info'))
+            commonToast.fire({
+                icon: 'info',
+                title: "{{ session('info') }}"
+            });
+        @endif
     </script>
-    @endif
     
     @stack('scripts')
 </body>

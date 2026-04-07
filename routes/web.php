@@ -27,7 +27,9 @@ use App\Http\Controllers\RoleController;
 */
 
 // Public routes
-Route::view('/login', 'auth.login')->name('login');
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 // Authentication routes (guest only)
 Route::middleware('guest')->group(function () {
@@ -105,8 +107,8 @@ Route::prefix('files')->name('files.')->group(function () {
     Route::post('/{file}/restore', [FileController::class, 'restore'])->name('restore');
     Route::get('/{file}/preview', [FileController::class, 'preview'])->name('preview');
     Route::delete('/shares/{share}', [FileController::class, 'revokeAccess'])->name('shares.revoke');
-    Route::get('/{uuid}/verify', [FileController::class, 'verifyAccess'])->name('access.verify');
-    Route::post('/{uuid}/verify', [FileController::class, 'confirmAccess'])->name('access.confirm');
+    Route::get('/{uuid}/verify', [FileController::class, 'verifyAccess'])->name('verify');
+    Route::post('/{uuid}/verify', [FileController::class, 'confirmAccess'])->name('confirm');
 });
     /*
     |--------------------------------------------------------------------------

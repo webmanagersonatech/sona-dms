@@ -472,11 +472,14 @@
                         .then(data => {
                             if (data.success) {
                                 Swal.fire({
-                                    title: 'Archived!',
-                                    text: 'File has been archived successfully.',
+                                    toast: true,
+                                    position: 'top-end',
+                                    title: 'Success!',
+                                    text: 'Action completed successfully.',
                                     icon: 'success',
-                                    timer: 1500,
-                                    showConfirmButton: false
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    timerProgressBar: true
                                 }).then(() => {
                                     window.location.reload();
                                 });
@@ -520,11 +523,14 @@
                         .then(data => {
                             if (data.success) {
                                 Swal.fire({
-                                    title: 'Restored!',
-                                    text: 'File has been restored successfully.',
+                                    toast: true,
+                                    position: 'top-end',
+                                    title: 'Success!',
+                                    text: 'Action completed successfully.',
                                     icon: 'success',
-                                    timer: 1500,
-                                    showConfirmButton: false
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    timerProgressBar: true
                                 }).then(() => {
                                     window.location.reload();
                                 });
@@ -568,11 +574,14 @@
                         .then(data => {
                             if (data.success) {
                                 Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
                                     title: 'Deleted!',
                                     text: 'File has been deleted successfully.',
                                     icon: 'success',
-                                    timer: 1500,
-                                    showConfirmButton: false
+                                    timer: 2000,
+                                    showConfirmButton: false,
+                                    timerProgressBar: true
                                 }).then(() => {
                                     window.location.reload();
                                 });

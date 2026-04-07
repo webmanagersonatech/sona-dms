@@ -370,7 +370,7 @@ class FileController extends Controller
         // Require OTP for shared access (not for owner or super admin)
         if ($user->id !== $file->owner_id && !$user->isSuperAdmin()) {
             if (!session('file_otp_verified_' . $file->id)) {
-                return redirect()->route('files.access.verify', $file->uuid);
+                return redirect()->route('files.verify', $file->uuid);
             }
         }
 
@@ -418,7 +418,7 @@ class FileController extends Controller
         // Require OTP for shared access (not for owner or super admin)
         if ($user->id !== $file->owner_id && !$user->isSuperAdmin()) {
             if (!session('file_otp_verified_' . $file->id)) {
-                return redirect()->route('files.access.verify', $file->uuid);
+                return redirect()->route('files.verify', $file->uuid);
             }
         }
 
@@ -1147,7 +1147,7 @@ class FileController extends Controller
             ]
         ]);
 
-        return redirect()->route('files.access.verify', $file->uuid)
+        return redirect()->route('files.verify', $file->uuid)
             ->with('info', 'OTP has been sent to the file owner for approval.');
     }
 

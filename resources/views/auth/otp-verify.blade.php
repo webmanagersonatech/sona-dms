@@ -37,29 +37,66 @@
 
 @push('scripts')
 <script>
-const inputs = document.querySelectorAll('.otp-input');
-const hidden = document.getElementById('otp_hidden');
+    const inputs = document.querySelectorAll('.otp-input');
+    const hidden = document.getElementById('otp_hidden');
 
-inputs.forEach((input,i)=>{
-    input.addEventListener('input',()=>{
-        if(input.value && i<5) inputs[i+1].focus();
-        update();
+    inputs.forEach((input, index) => {
+        // Handle input
+        input.addEventListener('input', (e) => {
+            if (e.inputType === 'deleteContentBackward') return;
+            
+            if (input.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+            update();
+        });
+
+        // Handle backspace
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+
+        // Handle paste
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').slice(0, inputs.length);
+            if (!/^\d+$/.test(pasteData)) return;
+
+            pasteData.split('').forEach((char, i) => {
+                if (inputs[i]) inputs[i].value = char;
+            });
+            update();
+            inputs[Math.min(pasteData.length, inputs.length - 1)].focus();
+        });
     });
-});
 
-function update(){
-    let val='';
-    inputs.forEach(i=>val+=i.value);
-    hidden.value = val;
-}
+    function update() {
+        let val = '';
+        inputs.forEach(i => val += i.value);
+        hidden.value = val;
+    }
 
-let time=300;
-setInterval(()=>{
-    let m=Math.floor(time/60);
-    let s=time%60;
-    document.getElementById('timer').innerText =
-        `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    time--;
-},1000);
+    // Timer Logic
+    let time = 300; // 5 minutes
+    const timerDisplay = document.getElementById('timer');
+    
+    const countdown = setInterval(() => {
+        time--;
+        if (time <= 0) {
+            clearInterval(countdown);
+            timerDisplay.innerText = "00:00";
+            timerDisplay.style.color = "#a0aec0";
+            return;
+        }
+        
+        let m = Math.floor(time / 60);
+        let s = time % 60;
+        timerDisplay.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    // Initial focus
+    inputs[0].focus();
 </script>
 @endpush
